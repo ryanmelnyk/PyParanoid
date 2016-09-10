@@ -5,6 +5,7 @@
 #This is important for "inside" scores, instead of running that process "n" times,
 #they are only run once...
 #Also massive amount of stripping out HTML and bootstrap functionality
+#removing do_blast and just generating diamond files with DiamondParser.py
 
 
 use File::Copy;
@@ -28,20 +29,12 @@ $blastall = "blastall";  #Add -aN to use N processors
 $formatdb = "formatdb";
 $blastParser = "blast_parser.pl";
 
-# $matrix = "BLOSUM62"; # Reasonable default for comparison of eukaryotes.
-$matrix = "BLOSUM45"; #(for prokaryotes),
-#$matrix = "BLOSUM80"; #(orthologs within metazoa),
-#$matrix = "PAM70";
-#$matrix = "PAM30";
-
 # Output options:                                                              #
 $output = 1;      # table_stats-format output                                  #
 $table = 1;       # Print tab-delimited table of orthologs to file "table.txt" #
                   # Each orthologous group with all inparalogs is on one line  #
 $mysql_table = 1; # Print out sql tables for the web server                    #
                   # Each inparalog is on separate line                         #
-                                      #
-
 # Algorithm parameters:
 # Default values should work without problems.
 # MAKE SURE, however, that the score cutoff here matches what you used for BLAST!
@@ -81,24 +74,19 @@ if ((!$run_blast) and (!$run_inparanoid)){
 }
 
 # Input files:
-$fasta_seq_fileA = "$ARGV[0]";
-$fasta_seq_fileB = "$ARGV[1]";
-$fasta_seq_fileC = "$ARGV[2]" if ($use_outgroup); # This is outgroup file
+$fasta_seq_fileA = "$ARGV[0]" . ".faa";
+$fasta_seq_fileB = "$ARGV[1]" . ".faa";
 
-my $blast_outputAB = $fasta_seq_fileA . "-" . $fasta_seq_fileB;
-my $blast_outputBA = $fasta_seq_fileB . "-" . $fasta_seq_fileA;
-my $blast_outputAA = $fasta_seq_fileA . "-" . $fasta_seq_fileA;
-my $blast_outputBB = $fasta_seq_fileB . "-" . $fasta_seq_fileB;
+my $blast_outputAB = "$ARGV[0]" . "." . "$ARGV[1]" . ".out";
+my $blast_outputBA = "$ARGV[1]" . "." . "$ARGV[0]" . ".out";
+my $blast_outputAA = "$ARGV[0]" . "." . "$ARGV[0]" . ".out";
+my $blast_outputBB = "$ARGV[1]" . "." . "$ARGV[1]" . ".out";
 
-if ($use_outgroup){
-    $blast_outputAC = $fasta_seq_fileA . "-" . $fasta_seq_fileC;
-    $blast_outputBC = $fasta_seq_fileB . "-" . $fasta_seq_fileC;
-}
+
 my %idA;        # Name -> ID combinations for species 1
 my %idB;        # Name -> ID combinations for species 2
 my @nameA;      # ID -> Name combinations for species 1
 my @nameB;      # ID -> Name combinations for species 2
-my @nameC;
 my %scoreAB;    # Hashes with pairwise BLAST scores (in bits)
 my %scoreBA;
 my %scoreAA;
@@ -183,66 +171,6 @@ Usage $0 <FASTAFILE with sequences of species A> <FASTAFILE with sequences of sp
     if ($output){
 	print OUTPUT "$B sequences in file $fasta_seq_fileB\n";
     }
-}
-
-#################################################
-# Run BLAST if not done already
-#################################################
-if ($run_blast){
-    print "Trying to run BLAST now - this may take several hours ... or days in worst case!\n";
-    print STDERR "Formatting BLAST databases\n";
-    system ("$formatdb -i $fasta_seq_fileA");
-    system ("$formatdb -i $fasta_seq_fileB") if (@ARGV >= 2);
-    system ("$formatdb -i $fasta_seq_fileC") if ($use_outgroup);
-    print STDERR "Done formatting\nStarting BLAST searches...\n";
-
-# Run blast only if the files do not already exist is not default.
-# NOTE: you should have done this beforehand, because you probably
-# want two-pass blasting anyway which is not implemented here
-# this is also not adapted to use specific compositional adjustment settings
-# and might not use the proper blast parser...
-
-##Check blast folder for blast files and copy to local directory.
-
-my @blastfiles = ($blast_outputAA, $blast_outputAB, $blast_outputBA, $blast_outputBB);
-
-foreach my $file (@blastfiles){
-    if (-e "../blast/$file"){
-	print "Found file $file in blast repository.  Copying to local directory...\n";
-	copy("../blast/$file","$file");
-    }
-}
-
-##Modified to check for existence of BLAST output prior to running...
-
-
-    unless(-e $blast_outputAA){
-	do_blast ($fasta_seq_fileA, $fasta_seq_fileA, $A, $A, $blast_outputAA);
-    }else{
-	print "$blast_outputAA already exists. Skipping this blast run...\n";
-    }
-    if (@ARGV >= 2) {
-	unless(-e $blast_outputAB){
-	    do_blast ($fasta_seq_fileA, $fasta_seq_fileB, $B, $B, $blast_outputAB);
-	}else{
-	    print "$blast_outputAB already exists. Skipping this blast run...\n";
-	}
-	unless(-e $blast_outputBA){
-	    do_blast ($fasta_seq_fileB, $fasta_seq_fileA, $A, $A, $blast_outputBA);
-	}else{
-	    print "$blast_outputBA already exists. Skipping this blast run...\n";
-	}
-	unless(-e $blast_outputBB){
-	    do_blast ($fasta_seq_fileB, $fasta_seq_fileB, $B, $B, $blast_outputBB);
-	}else{
-	    print "$blast_outputBB already exists. Skipping this blast run...\n";
-	}
-    }
-
-    print STDERR "Done BLAST searches. ";
-
-} else {
-	print STDERR "Skipping blast! \n";
 }
 
 if ($run_inparanoid){
@@ -1095,12 +1023,6 @@ if ($run_inparanoid){
 	print "mysql output saved to $filename2\n";
     }
 
-    if ($run_blast) {
-      unlink "formatdb.log";
-      unlink "$fasta_seq_fileA.phr", "$fasta_seq_fileA.pin", "$fasta_seq_fileA.psq";
-      unlink "$fasta_seq_fileB.phr", "$fasta_seq_fileB.pin", "$fasta_seq_fileB.psq" if (@ARGV >= 2);
-      unlink "$fasta_seq_fileC.phr", "$fasta_seq_fileC.pin", "$fasta_seq_fileC.psq" if ($use_outgroup);
-    }
   }
 
 ##############################################################
@@ -1244,17 +1166,4 @@ sub overlap_test {
 	# print "$Fld[3] $Fld[5] $Fld[7]; $Fld[4] $Fld[6] $Fld[8]; retval=$retval\n";
 
 	return $retval;
-}
-
-sub do_blast {
-  my @Fld = @_;
-
-  # $Fld [0] is query
-  # $Fld [1] is database
-  # $Fld [2] is query size
-  # $Fld [3] is database size
-  # $Fld [4] is output name
-
-  # Use soft masking (low complexity masking by SEG in search phase, not in alignment phase).
-  system ("$blastall -F\"m S\" -i $Fld[0] -d $Fld[1] -p blastp -v $Fld[3] -b $Fld[3] -M $matrix -z 5000000 -m7 | ./$blastParser $score_cutoff > $Fld[4]");
 }
