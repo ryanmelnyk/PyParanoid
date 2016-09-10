@@ -11,30 +11,9 @@
 use File::Copy;
 my $usage =" Usage: inparanoid.pl <FASTAFILE with sequences of species A> <FASTAFILE with sequences of species B> [FASTAFILE with sequences of species C]";
 
-
-###############################################################################
-# Set following variables:                                                    #
-###############################################################################
-
-# What do you want the program to do?                                         #
-$run_blast = 1;  # Set to 1 if you don't have the 4 BLAST output files        #
-                 # Requires 'blastall', 'formatdb' (NCBI BLAST2)              #
-                 # and parser 'blast_parser.pl'                               #
-
 $run_inparanoid = 1;
-
-# Define location of files and programs:
-#$blastall = "blastall -VT"; #Remove -VT for blast version 2.2.12 or earlier
-$blastall = "blastall";  #Add -aN to use N processors
-$formatdb = "formatdb";
-$blastParser = "blast_parser.pl";
-
-# Output options:                                                              #
-$output = 1;      # table_stats-format output                                  #
 $table = 1;       # Print tab-delimited table of orthologs to file "table.txt" #
-                  # Each orthologous group with all inparalogs is on one line  #
-$mysql_table = 1; # Print out sql tables for the web server                    #
-                  # Each inparalog is on separate line                         #
+
 # Algorithm parameters:
 # Default values should work without problems.
 # MAKE SURE, however, that the score cutoff here matches what you used for BLAST!
@@ -114,11 +93,6 @@ my @confA;      # Confidence values for orthologous groups
 my @confB;      # Confidence values for orthologous groups
 my $prev_time = 0;
 
-$outputfile = "Output." . $ARGV[0] . "-" . $ARGV[1];
-if ($output){
-    open OUTPUT, ">$outputfile" or warn "Could not write to OUTPUT file $filename\n";
-}
-
 #################################################
 # Assign ID numbers for species A
 #################################################
@@ -140,10 +114,6 @@ while (<A>){
 close A;
 $A = $id;
 print "$A sequences in file $fasta_seq_fileA\n";
-
-if ($output){
-    print OUTPUT "$A sequences in file $fasta_seq_fileA\n";
-}
 
 if (@ARGV >= 2) {
 #################################################
@@ -168,9 +138,6 @@ Usage $0 <FASTAFILE with sequences of species A> <FASTAFILE with sequences of sp
     print "$B sequences in file $fasta_seq_fileB\n";
     close B;
 
-    if ($output){
-	print OUTPUT "$B sequences in file $fasta_seq_fileB\n";
-    }
 }
 
 if ($run_inparanoid){
@@ -222,9 +189,7 @@ if ($run_inparanoid){
 #printf ("hitnAB[1] = %d\n",$hitnAB[1]);
 #printf ("hitnAB[%d] = %d\n",$idQ,$hit);
     close AB;
-    if ($output){
-	print OUTPUT "$count sequences $fasta_seq_fileA have homologs in dataset $fasta_seq_fileB\n";
-    }
+
 #################################################
 # Read in best hits from blast output file BA
 #################################################
@@ -270,9 +235,6 @@ if ($run_inparanoid){
     $hitnBA[$idQ] = $hit; # For the last query
 #printf ("hitnBA[%d] = %d\n",$idQ,$hit);
     close BA;
-    if ($output){
-	print OUTPUT "$count sequences $fasta_seq_fileB have homologs in dataset $fasta_seq_fileA\n";
-    }
 ##################### Equalize AB scores and BA scores ##########################
 
     	foreach my $key (keys %scoreAB) {
@@ -454,9 +416,7 @@ if ($run_inparanoid){
 	$hitnAA[$idA{$q}] = $hit;
     }
     close AA;
-    if ($output){
-	print OUTPUT "$count $fasta_seq_fileA-$fasta_seq_fileA matches\n";
-    }
+
 ################################
 # Read inside scores from BB
 ################################
@@ -495,9 +455,7 @@ if ($run_inparanoid){
 	$hitnBB[$idB{$q}] = $hit;
     }
     close BB;
-    if ($output){
-	print OUTPUT "$count $fasta_seq_fileB-$fasta_seq_fileB matches\n";
-    }
+
     print "Maximum number of hits per sequence was $max_hit\n" if ($debug);
 #####################################################
 # Find paralogs:
@@ -812,20 +770,6 @@ if ($run_inparanoid){
     &clean_up(1);
 ###################
 
-    if ($output){
-	print OUTPUT "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\n";
-	print OUTPUT "$o groups of orthologs\n";
-	print OUTPUT "$totalA in-paralogs from $fasta_seq_fileA\n";
-	print OUTPUT "$totalB in-paralogs from $fasta_seq_fileB\n";
-	print OUTPUT "Grey zone $grey_zone bits\n";
-	print OUTPUT "Score cutoff $score_cutoff bits\n";
-	print OUTPUT "In-paralogs with confidence less than $conf_cutoff not shown\n";
-	print OUTPUT "Sequence overlap cutoff $seq_overlap_cutoff\n";
-	print OUTPUT "Group merging cutoff $group_overlap_cutoff\n";
-	print OUTPUT "Scoring matrix $matrix\n";
-	print OUTPUT "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\n";
-    }
-
 # ##############################################################################
 # Check for alternative orthologs, sort paralogs by confidence and print results
 # ##############################################################################
@@ -923,13 +867,7 @@ if ($run_inparanoid){
 
 	}
 	close FF;
-	########### Print header ###############
-	if ($output){
-	    print OUTPUT "___________________________________________________________________________________\n";
-	    print OUTPUT "Group of orthologs #" . $i .". Best score $ortoS[$i] bits\n";
-		print OUTPUT "Score difference with first non-orthologous sequence - ";
-	    printf (OUTPUT "%s:%d   %s:%d\n", $fasta_seq_fileA,$confA[$i],$fasta_seq_fileB,$confB[$i]);
-	}
+
 
 	########### Sort and print members of A ############
 	$nA = @membersA;
@@ -956,29 +894,6 @@ if ($run_inparanoid){
 	}
 	$paralogsB[$i] = join(' ',@membersB); # Put them back together
 	# Print to text file and to HTML file
-	for $m (0..($nMAX-1)){
-	    if ($m < $nA){
-		if ($output){
-		    printf (OUTPUT "%-20s\t%.2f%%\t\t", $nameA[$membersA[$m]], (100*$confPA[$membersA[$m]]));
-		}
-	    }
-	    else {
-		printf (OUTPUT "%-20s\t%-7s\t\t", "                    ", "       ");
-
-	    }
-	    if ($m < $nB){
-		if ($output){
-		    printf (OUTPUT "%-20s\t%.2f%%\n", $nameB[$membersB[$m]], (100*$confPB[$membersB[$m]]));
-		}
-	    }
-	    else {
-		printf (OUTPUT "%-20s\t%-7s\n", "                    ", "       ") if($output);
-	    }
-	}
-    }
-    if ($output) {
-      close OUTPUT;
-      print "Output saved to file $outputfile\n";
     }
 
     if ($table){
@@ -1002,25 +917,6 @@ if ($run_inparanoid){
 	}
 	close F;
 	print "Table output saved to $filename\n";
-    }
-    if ($mysql_table){
-	$filename2 = "sqltable." . $ARGV[0] . "-" . $ARGV[1];
-	open F2, ">$filename2" or die;
-	for $i(1..$o){
-	    @membersA = split(/ /, $paralogsA[$i]);
-	    for $m (@membersA){
-		# $m =~ s/://g;
-	   printf (F2 "%d\t%d\t%s\t%.3f\t%s\n", $i, $ortoS[$i], $ARGV[0], $confPA[$m], $nameA[$m]);
-	    }
-	    @membersB = split(/ /, $paralogsB[$i]);
-	    for $m (@membersB){
-		# $m =~ s/://g;
-		printf (F2 "%d\t%d\t%s\t%.3f\t%s\n", $i, $ortoS[$i], $ARGV[1], $confPB[$m], $nameB[$m]);
-
-	    }
-	}
-	close F2;
-	print "mysql output saved to $filename2\n";
     }
 
   }
