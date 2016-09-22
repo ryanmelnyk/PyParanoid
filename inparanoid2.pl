@@ -9,7 +9,7 @@
 
 
 use File::Copy;
-my $usage =" Usage: inparanoid.pl <FASTAFILE with sequences of species A> <FASTAFILE with sequences of species B> [FASTAFILE with sequences of species C]";
+my $usage =" Usage: inparanoid.pl <FASTAFILE with sequences of species A> <FASTAFILE with sequences of species B> <path to outdir>";
 
 $run_inparanoid = 1;
 $table = 1;       # Print tab-delimited table of orthologs to file "table.txt" #
@@ -53,13 +53,13 @@ if ((!$run_blast) and (!$run_inparanoid)){
 }
 
 # Input files:
-$fasta_seq_fileA = "$ARGV[0]" . ".faa";
-$fasta_seq_fileB = "$ARGV[1]" . ".faa";
+$fasta_seq_fileA = "$ARGV[2]" . "/faa/" . "$ARGV[0]" . ".faa";
+$fasta_seq_fileB = "$ARGV[2]" . "/faa/" . "$ARGV[1]" . ".faa";
 
-my $blast_outputAB = "$ARGV[0]" . "." . "$ARGV[1]" . ".out";
-my $blast_outputBA = "$ARGV[1]" . "." . "$ARGV[0]" . ".out";
-my $blast_outputAA = "$ARGV[0]" . "." . "$ARGV[0]" . ".out";
-my $blast_outputBB = "$ARGV[1]" . "." . "$ARGV[1]" . ".out";
+my $blast_outputAB = "$ARGV[2]" . "/out/" . "$ARGV[0]" . "." . "$ARGV[1]" . ".out";
+my $blast_outputBA = "$ARGV[2]" . "/out/" . "$ARGV[1]" . "." . "$ARGV[0]" . ".out";
+my $blast_outputAA = "$ARGV[2]" . "/out/" . "$ARGV[0]" . "." . "$ARGV[0]" . ".out";
+my $blast_outputBB = "$ARGV[2]" . "/out/" . "$ARGV[1]" . "." . "$ARGV[1]" . ".out";
 
 
 my %idA;        # Name -> ID combinations for species 1
@@ -113,7 +113,6 @@ while (<A>){
 }
 close A;
 $A = $id;
-print "$A sequences in file $fasta_seq_fileA\n";
 
 if (@ARGV >= 2) {
 #################################################
@@ -135,13 +134,11 @@ Usage $0 <FASTAFILE with sequences of species A> <FASTAFILE with sequences of sp
 	}
     }
     $B = $id;
-    print "$B sequences in file $fasta_seq_fileB\n";
     close B;
 
 }
 
 if ($run_inparanoid){
-    print STDERR "Starting ortholog detection...\n";
 #################################################
 # Read in best hits from blast output file AB
 #################################################
@@ -226,14 +223,11 @@ if ($run_inparanoid){
 	}
 	++$hit;
 	$hitBA[$idQ][$hit] = int($idM);
-#	printf ("hitBA[%d][%d] = %d\n",$idQ,$hit,$idM);
 	$scoreBA{"$idQ:$idM"} = $score;
 	$scoreAB{"$idM:$idQ"} = $score_cutoff if ($scoreAB{"$idM:$idQ"} < $score_cutoff); # Initialize missing scores
 	$old_idQ = $idQ;
-#    }
     }
     $hitnBA[$idQ] = $hit; # For the last query
-#printf ("hitnBA[%d] = %d\n",$idQ,$hit);
     close BA;
 ##################### Equalize AB scores and BA scores ##########################
 
@@ -255,8 +249,7 @@ if ($run_inparanoid){
 
 ##################### Re-sort hits, besthits and bestscore #######################
     for $idA(1..$A){
-#    print "Loop index = $idA\n";
-#    printf ("hitnAB[%d] = %d\n",$idA, $hitnAB[$idA]);
+
 	next if (!($hitnAB[$idA]));
 	for $hit (1..($hitnAB[$idA]-1)){ # Sort hits by score
 	    while($scoreAB{"$idA:$hitAB[$idA][$hit]"} < $scoreAB{"$idA:$hitAB[$idA][$hit+1]"}){
@@ -278,7 +271,7 @@ if ($run_inparanoid){
 	}
 	undef $is_besthitAB[$idA]; # Create index that we can check later
 	grep (vec($is_besthitAB[$idA],$_,1) = 1, split(/ /,$besthitAB[$idA]));
-#    printf ("besthitAB[%d] = hitAB[%d][%d] = %d\n",$idA,$idA,$hit,$besthitAB[$idA]);
+
 
     }
 
@@ -897,7 +890,7 @@ if ($run_inparanoid){
     }
 
     if ($table){
-	$filename = "table." . $ARGV[0] . "-" . $ARGV[1];
+	$filename = "$ARGV[2]" . "/paranoid_output/" . $ARGV[0] . "." . $ARGV[1] . ".txt";
 	open F, ">$filename" or die;
 	print F "OrtoID\tScore\tOrtoA\tOrtoB\n";
 	for $i(1..$o){
@@ -916,7 +909,6 @@ if ($run_inparanoid){
 	    print F "\n";
 	}
 	close F;
-	print "Table output saved to $filename\n";
     }
 
   }
