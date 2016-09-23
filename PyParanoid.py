@@ -103,7 +103,7 @@ def parse_diamond(genes,outdir):
 			newvals.append(str(int(vals[9])-int(vals[8])+1))
 			newvals.append("p:{}-{} h:{}-{}".format(vals[6],vals[7],vals[8],vals[9]))
 			o.write("\t".join(newvals)+"\n")
-			count -= 1
+		count -= 1
 		if count == 0:
 			print "\tDone!"
 		elif count % 10 == 0:
