@@ -31,13 +31,19 @@ def setupdir(outdir,strains,genomedb):
 		except OSError:
 			print "Subfolder exists:", outdir
 
+	print "Formatting",len(strains), "fasta files..."
 	for s in strains:
 		try:
-			shutil.copy(os.path.join(genomedb,"pep",s+".pep.fa"),os.path.join(outdir,"faa",s+".faa"))
+			i = open(os.path.join(genomedb,"pep",s+".pep.fa"),"r")
 		except IOError as exc:
 			if exc.errno == 2:
 				print s, 'not found in database...check your strainlist.'
 				sys.exit()
+		o = open(os.path.join(outdir,"faa",s+".faa"),"w")
+		for seq in SeqIO.parse(i,'fasta'):
+			seq.id = s+"|"+str(seq.id)
+			SeqIO.write(seq,o,'fasta')
+		o.close()
 	return
 
 def make_diamond_databases(strains,outdir):
