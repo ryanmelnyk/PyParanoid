@@ -89,8 +89,8 @@ def run_diamond(strains,outdir):
 
 def run_diamond_on_old_strains(strains,outdir,old_strains):
 
-	print "Running reflexive diamond on all", len(strains), "strains..."
-	count = len(strains)
+	print "Running reflexive diamond on all", len(old_strains), "strains..."
+	count = len(old_strains)
 	for s in old_strains:
 		cmds = "diamond blastp --query {}/faa/{}.faa -d {}/dmnd/{}.dmnd -o {}/m8/{}.{}.m8 -f tab --min-score 50 --quiet --threads 6".format(outdir,s,outdir,s,outdir,s,s)
 		proc = subprocess.Popen(cmds.split())
