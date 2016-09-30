@@ -4,6 +4,10 @@
 
 
 import os, argparse, subprocess, itertools
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from Bio import SeqIO
 
 def parse_args():
 	parser = argparse.ArgumentParser(description='''
@@ -61,21 +65,69 @@ def dump(outdir):
 		proc.wait()
 	return
 
-def parse_clusters(outdir):
+def parse_clusters(outdir, strains, seq_number):
+	d = {}
+
 	for i in ["1.4","2","4","6"]:
+		o = open(os.path.join(outdir,"clusterstats.{}.out".format(i.replace(".",""))),'w')
+		orthologs = 0
+		paralogs = 0
+		nghs = 0
+		singletons = 0
+		lengths = []
+		coverage = 0
 		for line in open(os.path.join(outdir,"clusters.{}.txt".format(i.replace(".",""))),"r"):
 			vals = line.rstrip().split()
-	return
+			coverage += len(vals)
+			if set([v.split("|")[0] for v in vals]) == set(strains):
+				if len(vals) > len(strains):
+					paralogs += 1
+				elif len(vals) == len(strains):
+					orthologs += 1
+			else:
+				if len(vals) == 1:
+					singletons += 1
+				else:
+					nghs += 1
+			lengths.append(len(vals))
+		d[i] = pd.Series(sorted(lengths,reverse=True))
+		o.write("{} orthologs.\n".format(orthologs))
+		o.write("{} paralogs.\n".format(paralogs))
+		o.write("{} non-global homologs\n".format(nghs))
+		o.write("{} singletons.\n".format(singletons))
+		o.write("="*60+"\n")
+		o.write("Largest cluster: {} sequences.\n".format(d[i][0]))
+		o.write("Coverage: {}% of sequence DB\n".format(round(float(coverage)*100/float(seq_number),1)))
+		o.write("="*60+"\n")
+		o.write("{} total homolog groups.\n".format(len(lengths)))
+		o.close()
+	return pd.DataFrame(d)
+
+def get_number_of_seqs(outdir, strains):
+	count = 0
+	for s in strains:
+		for seq in SeqIO.parse(open(os.path.join(outdir,"faa",s+".faa"),'r'),'fasta'):
+			count += 1
+	print count, "total sequences in database."
+	return count
 
 def main():
 	args = parse_args()
 	outdir = os.path.abspath(args.outdir)
+	strains = [line.rstrip() for line in open(os.path.join(outdir, "strainlist.txt"))]
 
-	# create_abc_file(outdir)
-	# run_mcxload(outdir)
-	# cluster(outdir)
+	create_abc_file(outdir)
+	run_mcxload(outdir)
+	cluster(outdir)
 	dump(outdir)
-	parse_clusters(outdir)
+
+	seq_number = get_number_of_seqs(outdir, strains)
+	df = parse_clusters(outdir, strains, seq_number)
+
+	fig = plt.figure()
+	df.plot()
+	plt.savefig(os.path.join(outdir, 'ortholog_groups.png'),dpi=300)
+	print df.count()
 
 if __name__ == '__main__':
 	main()
