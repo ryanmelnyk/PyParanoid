@@ -25,7 +25,7 @@ def setupdir(outdir,strains,genomedb):
 		if exc.errno == errno.EEXIST:
 			print "Database folder exists:", outdir
 
-	for f in ["faa","dmnd","m8","out","paranoid_output"]:
+	for f in ["faa","dmnd","m8","out","paranoid_output","mcl"]:
 		try:
 			os.makedirs(os.path.join(os.path.join(outdir,f)))
 		except OSError:

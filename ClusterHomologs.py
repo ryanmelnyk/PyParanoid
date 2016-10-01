@@ -18,7 +18,7 @@ Runs the clustering process as well, providing stats on the output.
 	return parser.parse_args()
 
 def create_abc_file(outdir):
-	o = open(os.path.join(outdir,"input.abc"),'w')
+	o = open(os.path.join(outdir,"mcl","input.abc"),'w')
 	count = len(os.listdir(os.path.join(outdir,"paranoid_output")))
 	print "Parsing", count, "output files."
 	for f in os.listdir(os.path.join(outdir,"paranoid_output")):
@@ -46,21 +46,21 @@ def create_abc_file(outdir):
 	return
 
 def run_mcxload(outdir):
-	cmds = ["mcxload","--stream-mirror","-abc",os.path.join(outdir,"input.abc"),"-o",os.path.join(outdir,"data.mci"),"-write-tab",os.path.join(outdir,"data.tab")]
+	cmds = ["mcxload","--stream-mirror","-abc",os.path.join(outdir,"mcl","input.abc"),"-o",os.path.join(outdir,"mcl","data.mci"), "-write-tab",os.path.join(outdir,"mcl","data.tab")]
 	proc = subprocess.Popen(cmds)
 	proc.wait()
 	return
 
 def cluster(outdir):
 	for i in ["1.4","2","4","6"]:
-		cmds = ["mcl",os.path.join(outdir,"data.mci"),"-I",i,"-o",os.path.join(outdir,"mcl.{}.out".format(i.replace(".","")))]
+		cmds = ["mcl",os.path.join(outdir,"mcl","data.mci"),"-I",i,"-o", os.path.join(outdir,"mcl","mcl.{}.out".format(i.replace(".","")))]
 		proc = subprocess.Popen(cmds)
 		proc.wait()
 	return
 
 def dump(outdir):
 	for i in ["1.4","2","4","6"]:
-		cmds = ["mcxdump", "-imx", os.path.join(outdir,"data.mci"),"-tabr",os.path.join(outdir,"data.tab"),"-icl",os.path.join(outdir,"mcl.{}.out".format(i.replace(".",""))),"-o",os.path.join(outdir,"clusters.{}.txt".format(i.replace(".","")))]
+		cmds = ["mcxdump", "-imx",os.path.join(outdir,"mcl","data.mci"),"-tabr",os.path.join(outdir,"mcl","data.tab"),"-icl", os.path.join(outdir,"mcl","mcl.{}.out".format(i.replace(".",""))),"-o", os.path.join(outdir,"mcl","clusters.{}.txt".format(i.replace(".","")))]
 		proc = subprocess.Popen(cmds)
 		proc.wait()
 	return
@@ -69,14 +69,14 @@ def parse_clusters(outdir, strains, seq_number):
 	d = {}
 
 	for i in ["1.4","2","4","6"]:
-		o = open(os.path.join(outdir,"clusterstats.{}.out".format(i.replace(".",""))),'w')
+		o = open(os.path.join(outdir,"mcl","clusterstats.{}.out".format(i.replace(".",""))),'w')
 		orthologs = 0
 		paralogs = 0
 		nghs = 0
 		singletons = 0
 		lengths = []
 		coverage = 0
-		for line in open(os.path.join(outdir,"clusters.{}.txt".format(i.replace(".",""))),"r"):
+		for line in open(os.path.join(outdir,"mcl","clusters.{}.txt".format(i.replace(".",""))),"r"):
 			vals = line.rstrip().split()
 			coverage += len(vals)
 			if set([v.split("|")[0] for v in vals]) == set(strains):
@@ -126,7 +126,7 @@ def main():
 
 	fig = plt.figure()
 	df.plot()
-	plt.savefig(os.path.join(outdir, 'ortholog_groups.png'),dpi=300)
+	plt.savefig(os.path.join(outdir, "mcl",'ortholog_groups.png'),dpi=300)
 	print df.count()
 
 if __name__ == '__main__':
