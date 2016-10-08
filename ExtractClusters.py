@@ -75,6 +75,7 @@ def align_groups(outdir):
 
 def build_hmms(outdir):
 	print "Building hmms..."
+
 	for f in os.listdir(os.path.join(outdir, "aligned")):
 		cmds = "hmmbuild {} {}".format(os.path.join(outdir,"hmms",f.split(".")[0]+".hmm"),os.path.join(outdir,"aligned",f))
 		proc = subprocess.Popen(cmds.split())
@@ -89,6 +90,19 @@ def emit_consensus_seqs(outdir):
 		proc.wait()
 	return
 
+def combine_seqs(outdir):
+	print "Writing multi-hmm file..."
+	o = open(os.path.join(outdir,"all_groups.hmm"),'w')
+	for f in os.listdir(os.path.join(outdir,"hmms")):
+		o.write(open(os.path.join(outdir,"hmms",f),'r').read())
+	o.close()
+	print "Writing multi-fasta consensus file..."
+	p = open(os.path.join(outdir,"all_groups.faa"),'w')
+	for f in os.listdir(os.path.join(outdir,"consensus_seqs")):
+		p.write(open(os.path.join(outdir,"consensus_seqs",f),'r').read())
+	p.close()
+	return
+
 def main():
 	args = parse_args()
 	outdir = os.path.abspath(args.outdir)
@@ -100,6 +114,7 @@ def main():
 	align_groups(outdir)
 	build_hmms(outdir)
 	emit_consensus_seqs(outdir)
+	combine_seqs(outdir)
 
 if __name__ == '__main__':
 	main()
