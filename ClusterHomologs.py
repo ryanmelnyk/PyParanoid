@@ -5,8 +5,7 @@
 
 import os, argparse, subprocess, itertools
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+
 from Bio import SeqIO
 
 def parse_args():
@@ -15,6 +14,7 @@ Script for formatting the PyParanoid output for a format compatible with MCL.
 Runs the clustering process as well, providing stats on the output.
 	''')
 	parser.add_argument('outdir', type=str,help='location of PyParanoid output')
+	parser.add_argument('--graphical',action='store_true',help='use if you want graphical output - don\'t use on bugaboo')
 	return parser.parse_args()
 
 def create_abc_file(outdir):
@@ -124,10 +124,12 @@ def main():
 	seq_number = get_number_of_seqs(outdir, strains)
 	df = parse_clusters(outdir, strains, seq_number)
 
-	fig = plt.figure()
-	df.plot()
-	plt.savefig(os.path.join(outdir, "mcl",'ortholog_groups.png'),dpi=300)
-	print df.count()
+	if args.graphical:
+		import matplotlib.pyplot as plt
+		fig = plt.figure()
+		df.plot()
+		plt.savefig(os.path.join(outdir, "mcl",'ortholog_groups.png'),dpi=300)
+
 
 if __name__ == '__main__':
 	main()
