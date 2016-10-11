@@ -53,13 +53,13 @@ if ((!$run_blast) and (!$run_inparanoid)){
 }
 
 # Input files:
-$fasta_seq_fileA = "$ARGV[2]" . "/faa/" . "$ARGV[0]" . ".faa";
-$fasta_seq_fileB = "$ARGV[2]" . "/faa/" . "$ARGV[1]" . ".faa";
+$fasta_seq_fileA = "$ARGV[2]" . "faa/" . "$ARGV[0]" . ".faa";
+$fasta_seq_fileB = "$ARGV[2]" . "faa/" . "$ARGV[1]" . ".faa";
 
-my $blast_outputAB = "$ARGV[2]" . "/out/" . "$ARGV[0]" . "." . "$ARGV[1]" . ".out";
-my $blast_outputBA = "$ARGV[2]" . "/out/" . "$ARGV[1]" . "." . "$ARGV[0]" . ".out";
-my $blast_outputAA = "$ARGV[2]" . "/out/" . "$ARGV[0]" . "." . "$ARGV[0]" . ".out";
-my $blast_outputBB = "$ARGV[2]" . "/out/" . "$ARGV[1]" . "." . "$ARGV[1]" . ".out";
+my $blast_outputAB = "$ARGV[2]" . "out/" . "$ARGV[0]" . "." . "$ARGV[1]" . ".out";
+my $blast_outputBA = "$ARGV[2]" . "out/" . "$ARGV[1]" . "." . "$ARGV[0]" . ".out";
+my $blast_outputAA = "$ARGV[2]" . "out/" . "$ARGV[0]" . "." . "$ARGV[0]" . ".out";
+my $blast_outputBB = "$ARGV[2]" . "out/" . "$ARGV[1]" . "." . "$ARGV[1]" . ".out";
 
 
 my %idA;        # Name -> ID combinations for species 1
@@ -890,7 +890,7 @@ if ($run_inparanoid){
     }
 
     if ($table){
-	$filename = "$ARGV[2]" . "/paranoid_output/" . $ARGV[0] . "." . $ARGV[1] . ".txt";
+	$filename = "$ARGV[2]" . "paranoid_output/" . $ARGV[0] . "." . $ARGV[1] . ".txt";
 	open F, ">$filename" or die;
 	print F "OrtoID\tScore\tOrtoA\tOrtoB\n";
 	for $i(1..$o){

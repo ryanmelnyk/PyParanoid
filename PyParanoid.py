@@ -180,7 +180,7 @@ def run_inparanoid(strains,outdir):
 		elif b in os.listdir(os.path.join(outdir,"paranoid_output")):
 			pass
 		else:
-			cmds = "perl inparanoid2.pl {} {} {}".format(p[0],p[1],outdir)
+			cmds = "perl inparanoid2.pl {} {} {}".format(p[0],p[1],outdir+"/")
 			proc = subprocess.Popen(cmds.split())
 			proc.wait()
 		count -= 1
