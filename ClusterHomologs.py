@@ -53,7 +53,7 @@ def run_mcxload(outdir):
 
 def cluster(outdir):
 	for i in ["1.4","2","4","6"]:
-		cmds = ["mcl",os.path.join(outdir,"mcl","data.mci"),"-t","4","-I",i,"-o", os.path.join(outdir,"mcl","mcl.{}.out".format(i.replace(".","")))]
+		cmds = ["mcl",os.path.join(outdir,"mcl","data.mci"),"-t","8","-I",i,"-o", os.path.join(outdir,"mcl","mcl.{}.out".format(i.replace(".","")))]
 		proc = subprocess.Popen(cmds)
 		proc.wait()
 	return

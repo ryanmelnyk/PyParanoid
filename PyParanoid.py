@@ -95,20 +95,6 @@ def run_diamond(strains,outdir):
 
 def run_diamond_on_old_strains(strains,outdir,old_strains):
 
-	print "Running reflexive diamond on all", len(old_strains), "strains..."
-	count = len(old_strains)
-	for s in old_strains:
-		cmds = "diamond blastp --query {}/faa/{}.faa -d {}/dmnd/{}.dmnd -o {}/m8/{}.{}.m8 -f tab --min-score 50 --quiet --threads 6".format(outdir,s,outdir,s,outdir,s,s)
-		proc = subprocess.Popen(cmds.split())
-		proc.wait()
-		count -= 1
-		if count == 0:
-			print "\tDone!"
-		elif (count % 10 == 0):
-			print "\t"+str(count), "remaining..."
-		else:
-			pass
-
 	count = 2 * len(strains) * len(old_strains)
 	print "Running pairwise diamond against all old strains:", count, "pairwise permutations ..."
 	for s in strains:
