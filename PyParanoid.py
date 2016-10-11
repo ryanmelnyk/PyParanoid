@@ -156,14 +156,17 @@ def run_inparanoid(strains,outdir):
 	pairs = list(itertools.combinations(strains,2))
 	count = len(pairs)
 	print "Running inparanoid on", count, "pairs of strains..."
+	files = os.listdir(os.path.join(outdir,"paranoid_output"))
 	for p in pairs:
 		a = "{}.{}.txt".format(p[0],p[1])
 		b = "{}.{}.txt".format(p[1],p[0])
 		if p[0] == p[1]:
 			pass
-		elif a in os.listdir(os.path.join(outdir,"paranoid_output")):
+		elif a in files:
+			files.remove(a)
 			pass
-		elif b in os.listdir(os.path.join(outdir,"paranoid_output")):
+		elif b in files:
+			files.remove(b)
 			pass
 		else:
 			cmds = "perl inparanoid2.pl {} {} {}".format(p[0],p[1],outdir+"/")
