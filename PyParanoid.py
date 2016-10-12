@@ -160,16 +160,16 @@ def run_inparanoid(strains,outdir):
 	for p in pairs:
 		a = "{}.{}.txt".format(p[0],p[1])
 		b = "{}.{}.txt".format(p[1],p[0])
-		if p[0] == p[1]:
-			pass
-		elif a in files:
+		if a in files:
 			files.remove(a)
-			pass
-		elif b in files:
-			files.remove(b)
-			pass
 		else:
 			cmds = "perl inparanoid2.pl {} {} {}".format(p[0],p[1],outdir+"/")
+			proc = subprocess.Popen(cmds.split())
+			proc.wait()
+		if b in files:
+			files.remove(b)
+		else:
+			cmds = "perl inparanoid2.pl {} {} {}".format(p[1],p[0],outdir+"/")
 			proc = subprocess.Popen(cmds.split())
 			proc.wait()
 		count -= 1
