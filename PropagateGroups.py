@@ -46,7 +46,7 @@ def check_strains(new_strains,genomedb,outdir):
 	return
 
 def setupdir(outdir):
-	for f in ["prop_faa","prop_dmnd","prop_m8","prop_out","prop_paranoid_output"]:
+	for f in ["prop_faa","prop_dmnd","prop_m8","prop_out","prop_paranoid_output","prop_homolog_faa"]:
 		try:
 			os.makedirs(os.path.join(os.path.join(outdir,f)))
 		except OSError:
@@ -108,7 +108,7 @@ def parse_diamond(genes,outdir):
 		o = open("{}/prop_out/{}.{}.out".format(outdir,a,b),'w')
 		for line in open(os.path.join(outdir,"prop_m8",f),'r'):
 			vals = line.rstrip().split()
-			newvals = [vals[0],vals[1],vals[11],str(genes[a][vals[0]]), str(genes[b][vals[1]])]
+			newvals = [vals[0],vals[1],vals[11],str(len(genes[a][vals[0]])), str(len(genes[b][vals[1]]))]
 			newvals.append(str(int(vals[7])-int(vals[6])+1))
 			newvals.append(str(int(vals[9])-int(vals[8])+1))
 			newvals.append(str(int(vals[7])-int(vals[6])+1))
@@ -130,10 +130,10 @@ def get_genes(strains,outdir):
 	for s in strains:
 		genes[s] = {}
 		for seq in SeqIO.parse(open("{}/prop_faa/{}.faa".format(outdir,s),'r'),'fasta'):
-			genes[s][seq.id] = len(str(seq.seq))
+			genes[s][seq.id] = str(seq.seq)
 	genes["CONSENSUS"] = {}
 	for seq in SeqIO.parse(open("{}/all_groups.faa".format(outdir,s),'r'),'fasta'):
-		genes["CONSENSUS"][seq.id] = len(str(seq.seq))
+		genes["CONSENSUS"][seq.id] = str(seq.seq)
 	return genes
 
 def run_inparanoid(strains,outdir):
@@ -163,20 +163,57 @@ def clean_up(outdir):
 			os.remove(os.path.join(outdir,"prop_out",f))
 	return
 
+def parse_inparanoid(outdir,new_strains):
+	group_members = {}
+	print new_strains
+	for s in new_strains:
+		for line in open(os.path.join(outdir,"prop_paranoid_output","{}.CONSENSUS.txt".format(s))):
+			if line.startswith("Orto"):
+				continue
+			vals = line.rstrip().split()
+			hits = []
+			for v in vals:
+				if v.startswith(s):
+					hits.append(v)
+				if v.startswith("group_"):
+					group = v.split("-")[0]
+					break
+			if group not in group_members:
+				group_members[group] = hits
+			else:
+				[group_members[group].append(h) for h in hits]
+
+	for g in sorted(group_members.keys(), key = lambda x: int(x.split("_")[1])):
+		print g, group_members[g]
+
+
+	return group_members
+
+def extract_fastas(outdir,genes,group_members):
+	for g in group_members:
+		o = open(os.path.join(outdir,"prop_homolog_faa",g.split("-")[0]+".faa"),'w')
+		for h in group_members[g]:
+			o.write(">{}\n{}\n".format(h,genes[h.split("|")[0]][h]))
+		o.close()
+
+	return
+
 def main():
 	args = parse_args()
 	outdir = os.path.abspath(args.outdir)
 	genomedb = os.path.abspath(args.genomedb)
 	new_strains = [line.rstrip() for line in open(os.path.abspath(args.new_strains),'r')]
 
-	setupdir(outdir)
-	check_strains(new_strains,genomedb,outdir)
-	make_diamond_databases(new_strains,outdir)
-	run_diamond(new_strains,outdir)
+	# setupdir(outdir)
+	# check_strains(new_strains,genomedb,outdir)
+	# make_diamond_databases(new_strains,outdir)
+	# run_diamond(new_strains,outdir)
 	genes = get_genes(new_strains,outdir)
-	parse_diamond(genes,outdir)
-	run_inparanoid(new_strains, outdir)
-	clean_up(outdir)
+	# parse_diamond(genes,outdir)
+	# run_inparanoid(new_strains, outdir)
+	# clean_up(outdir)
+	group_members = parse_inparanoid(outdir,new_strains)
+	extract_fastas(outdir,genes,group_members)
 
 if __name__ == '__main__':
 	main()
