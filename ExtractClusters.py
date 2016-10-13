@@ -103,6 +103,11 @@ def combine_seqs(outdir):
 	p.close()
 	return
 
+def cleanup(d):
+	for f in os.listdir(d):
+		os.remove(os.path.join(d,f))
+	return
+
 def main():
 	args = parse_args()
 	outdir = os.path.abspath(args.outdir)
@@ -112,9 +117,13 @@ def main():
 	parse_groups(seqdata, desc, outdir)
 	cluster_seqs(outdir)
 	align_groups(outdir)
+	cleanup(os.path.join(outdir,"clustered"))
 	build_hmms(outdir)
+	cleanup(os.path.join(outdir,"aligned"))
 	emit_consensus_seqs(outdir)
 	combine_seqs(outdir)
+	cleanup(os.path.join(outdir,"hmms"))
+	cleanup(os.path.join(outdir,"consensus_seqs"))
 
 if __name__ == '__main__':
 	main()

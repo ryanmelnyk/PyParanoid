@@ -45,6 +45,11 @@ def create_abc_file(outdir):
 	o.close()
 	return
 
+def clean_up(outdir):
+	for f in os.listdir(os.path.join(outdir,"paranoid_output")):
+		os.remove(os.path.join(outdir,"paranoid_output",f))
+	return
+
 def run_mcxload(outdir):
 	cmds = ["mcxload","--stream-mirror","-abc",os.path.join(outdir,"mcl","input.abc"),"-o",os.path.join(outdir,"mcl","data.mci"), "-write-tab",os.path.join(outdir,"mcl","data.tab")]
 	proc = subprocess.Popen(cmds)
@@ -117,6 +122,7 @@ def main():
 	strains = [line.rstrip() for line in open(os.path.join(outdir, "strainlist.txt"))]
 
 	create_abc_file(outdir)
+	clean_up(outdir)
 	run_mcxload(outdir)
 	cluster(outdir)
 	dump(outdir)
