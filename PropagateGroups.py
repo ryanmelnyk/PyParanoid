@@ -195,7 +195,28 @@ def extract_fastas(outdir,genes,group_members):
 		for h in group_members[g]:
 			o.write(">{}\n{}\n".format(h,genes[h.split("|")[0]][h]))
 		o.close()
+	return
 
+def dump_matrix(outdir):
+	o = open(os.path.join(outdir,"homolog_matrix.txt"),'w')
+	strains = [line.rstrip() for line in open(os.path.join(outdir,"strainlist.txt"),'r')]
+	[strains.append(s) for s in [line.rstrip() for line in open(os.path.join(outdir,"prop_strainlist.txt"),'r')]]
+	print strains
+	print len(strains)
+
+	o.write("\t{}\n".format("\t".join(strains)))
+
+	for f in os.listdir(os.path.join(outdir,"homolog_fasta")):
+		hits = []
+		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_fasta",f),'r'),'fasta'):
+			hits.append(seq.id.split("|")[0])
+		try:
+			for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",f),'r'),'fasta'):
+				hits.append(seq.id.split("|")[0])
+		except IOError:
+			print "No propagated sequence found!"
+		print hits
+		o.write("{}\t{}\n".format(f.split(".")[0],"\t".join([str(hits.count(s)) for s in strains])))
 	return
 
 def main():
@@ -204,16 +225,17 @@ def main():
 	genomedb = os.path.abspath(args.genomedb)
 	new_strains = [line.rstrip() for line in open(os.path.abspath(args.new_strains),'r')]
 
-	# setupdir(outdir)
-	# check_strains(new_strains,genomedb,outdir)
-	# make_diamond_databases(new_strains,outdir)
-	# run_diamond(new_strains,outdir)
+	setupdir(outdir)
+	check_strains(new_strains,genomedb,outdir)
+	make_diamond_databases(new_strains,outdir)
+	run_diamond(new_strains,outdir)
 	genes = get_genes(new_strains,outdir)
-	# parse_diamond(genes,outdir)
-	# run_inparanoid(new_strains, outdir)
-	# clean_up(outdir)
+	parse_diamond(genes,outdir)
+	run_inparanoid(new_strains, outdir)
+	clean_up(outdir)
 	group_members = parse_inparanoid(outdir,new_strains)
 	extract_fastas(outdir,genes,group_members)
+	dump_matrix(outdir)
 
 if __name__ == '__main__':
 	main()
