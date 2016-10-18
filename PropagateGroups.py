@@ -191,7 +191,7 @@ def parse_inparanoid(outdir,new_strains):
 
 def extract_fastas(outdir,genes,group_members):
 	for g in group_members:
-		o = open(os.path.join(outdir,"prop_homolog_faa",g.split("-")[0]+".faa"),'w')
+		o = open(os.path.join(outdir,"prop_homolog_faa",g.split("-")[0]+".faa"),'a')
 		for h in group_members[g]:
 			o.write(">{}\n{}\n".format(h,genes[h.split("|")[0]][h]))
 		o.close()
