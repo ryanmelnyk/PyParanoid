@@ -183,10 +183,6 @@ def parse_inparanoid(outdir,new_strains):
 			else:
 				[group_members[group].append(h) for h in hits]
 
-	for g in sorted(group_members.keys(), key = lambda x: int(x.split("_")[1])):
-		print g, group_members[g]
-
-
 	return group_members
 
 def extract_fastas(outdir,genes,group_members):
@@ -201,8 +197,6 @@ def dump_matrix(outdir):
 	o = open(os.path.join(outdir,"homolog_matrix.txt"),'w')
 	strains = [line.rstrip() for line in open(os.path.join(outdir,"strainlist.txt"),'r')]
 	[strains.append(s) for s in [line.rstrip() for line in open(os.path.join(outdir,"prop_strainlist.txt"),'r')]]
-	print strains
-	print len(strains)
 
 	o.write("\t{}\n".format("\t".join(strains)))
 
@@ -214,8 +208,7 @@ def dump_matrix(outdir):
 			for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",f),'r'),'fasta'):
 				hits.append(seq.id.split("|")[0])
 		except IOError:
-			print "No propagated sequence found!"
-		print hits
+			pass
 		o.write("{}\t{}\n".format(f.split(".")[0],"\t".join([str(hits.count(s)) for s in strains])))
 	return
 

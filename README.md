@@ -17,6 +17,7 @@ ExtractClusters.py
 ```
 #use profile HMMs to annotate many more genomes
 PropagateGroups.py
+ClassifyAllSequences.py
 ```
 
 ```
