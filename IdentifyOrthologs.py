@@ -15,6 +15,7 @@ Takes a complete PyParanoid directory (base and propagated) and generate list of
 
 def parse_matrix(outdir):
 	orthos = []
+	print "Parsing matrix to identify orthologs..."
 	for line in open(os.path.join(outdir,"homolog_matrix.txt")):
 		vals = line.rstrip().split("\t")
 		if vals[0] == "":
@@ -25,26 +26,69 @@ def parse_matrix(outdir):
 	print len(orthos), "orthologs found."
 	return orthos
 
-def extract_hmms(orthos,outdir):
+def concat_orthos(orthos, outdir):
+	count = len(orthos)
+	print "Concatenating {} ortholog files...".format(str(count))
 	for o in orthos:
-		cmds = "hmmfetch -o {} {} {}".format(os.path.join(outdir,"hmms",o+".hmm"),os.path.join(outdir,"all_groups.hmm"),o)
-		proc = subprocess.Popen(cmds.split())
-		proc.wait()
+		out = open(os.path.join(outdir,"concat",o+".faa"),'w')
+		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_fasta",o+".faa"),'r'),'fasta'):
+			out.write(">{}\n{}\n".format(str(seq.id).split("|")[0],str(seq.seq)))
+		for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",o+".faa"),'r'),'fasta'):
+			out.write(">{}\n{}\n".format(str(seq.id).split("|")[0],str(seq.seq)))
+		count -= 1
+		if count == 0:
+			print "\tDone!"
+		elif count % 100 == 0:
+			print "\t"+str(count), "remaining..."
+		else:
+			pass
 	return
 
-def align_hmms(orthos, outdir):
+def align_orthos(orthos,outdir):
+	count = len(orthos)
+	print "Aligning {} ortholog files...".format(str(count))
+	FNULL = open(os.devnull, 'w')
 	for o in orthos:
-		cmds = ""
-		### TODO
+		# cmds = "kalign {} {}".format(os.path.join(outdir,"concat",o+".faa"),os.path.join(outdir,"ortho_align",o+".fna"))
+		cmds = "hmmalign -o {} {} {}".format(os.path.join(outdir,"ortho_align",o+".sto"),os.path.join(outdir,"hmms",o+".hmm"),os.path.join(outdir,"concat",o+".faa"))
+		proc = subprocess.Popen(cmds.split(),stdout=FNULL,stderr=FNULL)
+		proc.wait()
+		count -= 1
+		if count == 0:
+			print "\tDone!"
+		elif count % 100 == 0:
+			print "\t"+str(count), "remaining..."
+		else:
+			pass
+	FNULL.close()
 	return
 
 def setupdir(outdir):
-	for f in ["aligned"]:
+	for f in ["ortho_align","concat"]:
 		try:
 			os.makedirs(os.path.join(outdir,f))
 		except OSError as exc:
 			if exc.errno == errno.EEXIST:
 				print "Database folder exists:", os.path.join(outdir,f)
+	return
+
+def extract_hmms(orthos,outdir):
+	count = len(orthos)
+	print "Extracting {} HMM files...".format(str(count))
+	FNULL = open(os.devnull, 'w')
+	for o in orthos:
+		# cmds = "kalign {} {}".format(os.path.join(outdir,"concat",o+".faa"),os.path.join(outdir,"ortho_align",o+".fna"))
+		cmds = "hmmfetch -o {} {} {}".format(os.path.join(outdir,"hmms",o+".hmm"),os.path.join(outdir,"all_groups.hmm"),o)
+		proc = subprocess.Popen(cmds.split(),stdout=FNULL,stderr=FNULL)
+		proc.wait()
+		count -= 1
+		if count == 0:
+			print "\tDone!"
+		elif count % 100 == 0:
+			print "\t"+str(count), "remaining..."
+		else:
+			pass
+	FNULL.close()
 	return
 
 def main():
@@ -53,8 +97,9 @@ def main():
 
 	setupdir(outdir)
 	orthos = parse_matrix(outdir)
-	# extract_hmms(orthos, outdir)
-	align_hmms(orthos,outdir)
+	extract_hmms(orthos,outdir)
+	concat_orthos(orthos,outdir)
+	align_orthos(orthos,outdir)
 
 if __name__ == '__main__':
 	main()
