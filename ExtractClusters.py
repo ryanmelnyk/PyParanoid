@@ -24,7 +24,8 @@ def hash_fastas(outdir):
 				match = re.search("(description:)(.*)",str(seq.description))
 				if match == None:
 					desc[str(seq.id)] = "None"
-				desc[str(seq.id)] = match.group(2)
+				else:
+					desc[str(seq.id)] = match.group(2)
 			else:
 				desc[str(seq.id)] = vals[2]
 	return seqdata, desc
