@@ -91,6 +91,33 @@ def extract_hmms(orthos,outdir):
 	FNULL.close()
 	return
 
+def create_master_alignment(orthos,outdir):
+	strains = [line.rstrip() for line in open(os.path.join(outdir,"strainlist.txt"))]
+	[strains.append(s) for s in [line.rstrip() for line in open(os.path.join(outdir,"prop_strainlist.txt"))]]
+	align_data = {k : [] for k in strains}
+	print align_data
+
+	for o in orthos:
+		for line in open(os.path.join(outdir,"ortho_align",o+".sto")):
+			if line.startswith("#") or line.startswith("//"):
+				continue
+			else:
+				vals = line.rstrip().split()
+				if len(vals) < 1:
+					continue
+				elif vals[0] in align_data:
+					align_data[vals[0]] += vals[1]
+				else:
+					align_data[vals[0]] = vals[1]
+
+	o = open(os.path.join(outdir,"master_alignment.faa"),'w')
+	for a in align_data:
+		print a, len(align_data[a])
+		o.write(">{}\n{}\n".format(a,"".join(align_data[a]).upper().replace(".","-")))
+	o.close()
+
+	return align_data
+
 def main():
 	args = parse_args()
 	outdir = os.path.abspath(args.outdir)
@@ -100,6 +127,7 @@ def main():
 	extract_hmms(orthos,outdir)
 	concat_orthos(orthos,outdir)
 	align_orthos(orthos,outdir)
+	create_master_alignment(orthos,outdir)
 
 if __name__ == '__main__':
 	main()
