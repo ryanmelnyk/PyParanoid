@@ -23,7 +23,7 @@ def hash_fastas(outdir):
 			if vals[2].startswith("pep:"):
 				match = re.search("(description:)(.*)",str(seq.description))
 				if match == None:
-					continue
+					desc[str(seq.id)] = "None"
 				desc[str(seq.id)] = match.group(2)
 			else:
 				desc[str(seq.id)] = vals[2]
