@@ -120,7 +120,6 @@ def extract_hmms(orthos,outdir):
 def create_master_alignment(orthos,outdir,strains):
 
 	align_data = {k : [] for k in strains}
-	print align_data
 
 	for o in orthos:
 		for line in open(os.path.join(outdir,"ortho_align",o+".sto")):

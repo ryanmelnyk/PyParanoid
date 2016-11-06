@@ -21,6 +21,12 @@ ClassifyAllSequences.py
 ```
 
 ```
+#generate a whole genome alignment
+IdentifyOrthologs.py
+Jackknife.py
+```
+
+```
 #to identify sequences
 QueryClusters.py
 PlotTreeGroups.py
