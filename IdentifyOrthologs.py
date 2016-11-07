@@ -57,14 +57,11 @@ def concat_orthos(orthos,outdir,strains):
 			if strain not in selected:
 				out.write(">{}\n{}\n".format(strain,str(seq.seq)))
 				selected.append(strain)
-		for s in strains:
-			if s not in selected:
-				out.write(">{}\n{}\n".format(s,"----------"))
 		out.close()
 		count -= 1
 		if count == 0:
 			print "\tDone!"
-		elif count % 100 == 0:
+		elif count % 10 == 0:
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
@@ -73,20 +70,18 @@ def concat_orthos(orthos,outdir,strains):
 def align_orthos(orthos,outdir):
 	count = len(orthos)
 	print "Aligning {} ortholog files...".format(str(count))
-	FNULL = open(os.devnull, 'w')
 	for o in orthos:
 		# cmds = "kalign {} {}".format(os.path.join(outdir,"concat",o+".faa"),os.path.join(outdir,"ortho_align",o+".fna"))
 		cmds = "hmmalign -o {} {} {}".format(os.path.join(outdir,"ortho_align",o+".sto"),os.path.join(outdir,"hmms",o+".hmm"),os.path.join(outdir,"concat",o+".faa"))
-		proc = subprocess.Popen(cmds.split(),stdout=FNULL,stderr=FNULL)
+		proc = subprocess.Popen(cmds.split())
 		proc.wait()
 		count -= 1
 		if count == 0:
 			print "\tDone!"
-		elif count % 100 == 0:
+		elif count % 10 == 0:
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
-	FNULL.close()
 	return
 
 def setupdir(outdir):
@@ -100,28 +95,38 @@ def setupdir(outdir):
 
 def extract_hmms(orthos,outdir):
 	count = len(orthos)
-	print "Extracting {} HMM files...".format(str(count))
+	present = [f.split(".")[0] for f in os.listdir(os.path.join(outdir,"hmms"))]
+	print "Extracting {} HMM files...{} already found.".format(str(count),str(len(present)))
 	FNULL = open(os.devnull, 'w')
 	for o in orthos:
-		# cmds = "kalign {} {}".format(os.path.join(outdir,"concat",o+".faa"),os.path.join(outdir,"ortho_align",o+".fna"))
-		cmds = "hmmfetch -o {} {} {}".format(os.path.join(outdir,"hmms",o+".hmm"),os.path.join(outdir,"all_groups.hmm"),o)
-		proc = subprocess.Popen(cmds.split(),stdout=FNULL,stderr=FNULL)
-		proc.wait()
 		count -= 1
-		if count == 0:
-			print "\tDone!"
-		elif count % 100 == 0:
+		if o in present:
+			pass
+		else:
+			cmds = "hmmfetch -o {} {} {}".format(os.path.join(outdir,"hmms",o+".hmm"),os.path.join(outdir,"all_groups.hmm"),o)
+			proc = subprocess.Popen(cmds.split(),stdout=FNULL,stderr=FNULL)
+			proc.wait()
+		if count % 10 == 0:
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
+	if count == 0:
+		print "\tDone!"
 	FNULL.close()
 	return
 
 def create_master_alignment(orthos,outdir,strains):
 
 	align_data = {k : [] for k in strains}
-
+	count = len(orthos)
+	print "Creating master alignment...Parsing {} homologs...".format(str(count))
 	for o in orthos:
+		count -= 1
+		present = []
+		for line in open(os.path.join(outdir,"hmms",o+".hmm")):
+			if line.startswith("LENG"):
+				length = int(line.rstrip().split()[1])
+				break
 		for line in open(os.path.join(outdir,"ortho_align",o+".sto")):
 			if line.startswith("#") or line.startswith("//"):
 				continue
@@ -131,9 +136,21 @@ def create_master_alignment(orthos,outdir,strains):
 					continue
 				elif vals[0] in align_data:
 					align_data[vals[0]].append(vals[1])
+					if vals[0] not in present:
+						present.append(vals[0])
 				else:
 					align_data[vals[0]] = [vals[1]]
-
+					if vals[0] not in present:
+						present.append(vals[0])
+		for s in strains:
+			if s not in present:
+				align_data[s].append("-"*length)
+		if count % 10 == 0:
+			print "\t"+str(count), "remaining..."
+		else:
+			pass
+	print "Done!"
+	print "Writing alignment..."
 	o = open(os.path.join(outdir,"master_alignment.faa"),'w')
 	for a in align_data:
 		o.write(">{}\n{}\n".format(a,"".join(align_data[a]).upper().replace(".","-")))
@@ -143,7 +160,6 @@ def create_master_alignment(orthos,outdir,strains):
 
 def cleanup(orthos,outdir):
 	for o in orthos:
-		os.remove(os.path.join(outdir,"hmms",o+".hmm"))
 		os.remove(os.path.join(outdir,"concat",o+".faa"))
 		os.remove(os.path.join(outdir,"ortho_align",o+".sto"))
 	return
