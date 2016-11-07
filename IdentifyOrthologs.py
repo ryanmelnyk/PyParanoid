@@ -2,7 +2,7 @@
 #schmelnyk@gmail.com
 #UBC Microbiology - Haney Lab
 
-import os, argparse, subprocess, errno
+import os, argparse, subprocess, errno, sys, string
 from Bio import SeqIO
 
 def parse_args():
@@ -47,16 +47,22 @@ def concat_orthos(orthos,outdir,strains):
 	for o in orthos:
 		selected = []
 		out = open(os.path.join(outdir,"concat",o+".faa"),'w')
-		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_fasta",o+".faa"),'r'),'fasta'):
-			strain = str(seq.id).split("|")[0]
-			if strain not in selected:
-				out.write(">{}\n{}\n".format(strain,str(seq.seq)))
-				selected.append(strain)
-		for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",o+".faa"),'r'),'fasta'):
-			strain = str(seq.id).split("|")[0]
-			if strain not in selected:
-				out.write(">{}\n{}\n".format(strain,str(seq.seq)))
-				selected.append(strain)
+		try:
+			for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_fasta",o+".faa"),'r'),'fasta'):
+				strain = str(seq.id).split("|")[0]
+				if strain not in selected:
+					out.write(">{}\n{}\n".format(strain,str(seq.seq)))
+					selected.append(strain)
+		except IOError:
+			pass
+		try:
+			for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",o+".faa"),'r'),'fasta'):
+				strain = str(seq.id).split("|")[0]
+				if strain not in selected:
+					out.write(">{}\n{}\n".format(strain,str(seq.seq)))
+					selected.append(strain)
+		except IOError:
+			pass
 		out.close()
 		count -= 1
 		if count == 0:
@@ -119,6 +125,7 @@ def create_master_alignment(orthos,outdir,strains):
 
 	align_data = {k : [] for k in strains}
 	count = len(orthos)
+	total_leng = 0 ###DEBUG
 	print "Creating master alignment...Parsing {} homologs...".format(str(count))
 	for o in orthos:
 		count -= 1
@@ -126,6 +133,7 @@ def create_master_alignment(orthos,outdir,strains):
 		for line in open(os.path.join(outdir,"hmms",o+".hmm")):
 			if line.startswith("LENG"):
 				length = int(line.rstrip().split()[1])
+				total_leng += length ###DEBUG
 				break
 		for line in open(os.path.join(outdir,"ortho_align",o+".sto")):
 			if line.startswith("#") or line.startswith("//"):
@@ -135,16 +143,22 @@ def create_master_alignment(orthos,outdir,strains):
 				if len(vals) < 1:
 					continue
 				elif vals[0] in align_data:
-					align_data[vals[0]].append(vals[1])
+					align_data[vals[0]].append(vals[1].translate(None,string.ascii_lowercase).replace(".",""))
 					if vals[0] not in present:
 						present.append(vals[0])
 				else:
-					align_data[vals[0]] = [vals[1]]
+					align_data[vals[0]] = [vals[1].translate(None,string.ascii_lowercase).replace(".","")]
 					if vals[0] not in present:
 						present.append(vals[0])
 		for s in strains:
 			if s not in present:
 				align_data[s].append("-"*length)
+			if len("".join(align_data[s])) != total_leng:
+				print s, "is short!"
+				print total_leng, len("".join(align_data[s]))
+				print align_data[s]
+				print o
+				sys.exit()
 		if count % 10 == 0:
 			print "\t"+str(count), "remaining..."
 		else:
@@ -182,9 +196,9 @@ def main():
 	extract_hmms(orthos,outdir)
 	strains = get_strains(outdir)
 	concat_orthos(orthos,outdir,strains)
-	align_orthos(orthos,outdir)
+	# align_orthos(orthos,outdir)
 	create_master_alignment(orthos,outdir,strains)
-	cleanup(orthos,outdir)
+	# cleanup(orthos,outdir)
 
 if __name__ == '__main__':
 	main()
