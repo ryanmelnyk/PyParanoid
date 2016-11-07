@@ -196,9 +196,9 @@ def main():
 	extract_hmms(orthos,outdir)
 	strains = get_strains(outdir)
 	concat_orthos(orthos,outdir,strains)
-	# align_orthos(orthos,outdir)
+	align_orthos(orthos,outdir)
 	create_master_alignment(orthos,outdir,strains)
-	# cleanup(orthos,outdir)
+	cleanup(orthos,outdir)
 
 if __name__ == '__main__':
 	main()
