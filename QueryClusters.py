@@ -53,7 +53,6 @@ def write_matrix(outdir,query,gene_lengths,tophits):
 
 	o = open(os.path.join(outdir,os.path.basename(query).split(".")[0],"hit_groups.txt"),'w')
 	for t in sorted(tophits.items(), key=lambda x: x[1][1]):
-		#### SORT ISN'T WORKING
 		o.write("{}\t{}\t{}\n".format(t[0],str(t[1][0]/float(gene_lengths[t[0]])),"\t".join([str(x) for x in t[1]])))
 
 	return

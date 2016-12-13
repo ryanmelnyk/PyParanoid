@@ -46,16 +46,19 @@ def make_matrix(outdir,strains,queryfolder):
 	for line in open(os.path.join(queryfolder,"hit_groups.txt")):
 		vals = line.rstrip().split("\t")
 		present = []
-		groups.append(vals[4])
+		groups.append(vals[1])
 		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_fasta",vals[3]+".faa"),'r'),'fasta'):
 			if str(seq.id).split("|")[0] not in present:
 				present.append(str(seq.id).split("|")[0])
-		df[vals[4]] = pd.Series(dict(zip(strains,[present.count(s) for s in strains])))
+		for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",vals[3]+".faa"),'r'),'fasta'):
+			if str(seq.id).split("|")[0] not in present:
+				present.append(str(seq.id).split("|")[0])
+		df[vals[1]] = pd.Series(dict(zip(strains,[present.count(s) for s in strains])))
 	return pd.DataFrame(df).reindex(strains)[groups]
 
 def plot_clustergrid(df,queryfolder):
 	fig, ax = plt.subplots()
-	hm = sns.heatmap(df, linewidths=.5,cbar=False,ax=ax,square=True)
+	hm = sns.heatmap(df, linewidths=.4,cbar=False,ax=ax,square=True)
 	# plt.setp(cg.ax_heatmap.yaxis.get_majorticklabels(), rotation=0)
 
 	# hm.set_yticklabels(rotation=0, ha='right')
