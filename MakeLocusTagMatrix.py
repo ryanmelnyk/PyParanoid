@@ -29,7 +29,15 @@ def dump_matrix(outdir):
 				hits[seq.id.split("|")[0]].append(seq.id.split("|")[1])
 		except IOError:
 			pass
-		o.write("{}\t{}\n".format(f.split(".")[0],"\t".join([";".join(k) for k in [hits[s] for s in strains]])))
+		thisline = []
+		for s in strains:
+			if len(hits[s]) == 0:
+				thisline.append("None")
+			elif len(hits[s]) == 1:
+				thisline.append(hits[s][0])
+			else:
+				thisline.append(";".join(hits[s]))
+		o.write("{}\t{}\n".format(f.split(".")[0],"\t".join(thisline)))
 	return
 
 def main():
