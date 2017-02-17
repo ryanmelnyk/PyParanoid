@@ -48,7 +48,7 @@ def plot(x,y):
 
 	plt.xlim([0,220])
 	plt.ylim([0,30000])
-	ax = sns.regplot(x=x,y=y, color="g",order=0.5)
+	ax = sns.regplot(x=x,y=y,fit_reg=False)
 	plt.savefig('test.png',dpi=300)
 	return
 
