@@ -5,7 +5,7 @@
 import argparse, os
 import seaborn as sns
 import numpy as np
-from ete2 import Tree
+from ete3 import Tree
 from itertools import combinations
 import cPickle as pickle
 import scipy.cluster.hierarchy as hclust
