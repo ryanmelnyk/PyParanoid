@@ -11,9 +11,10 @@ Script for checking all fasta protein sequences for presence in either the
 initial homolog groups or the propagated calls.
 	''')
 	parser.add_argument('outdir', type=str,help='PyParanoid directory')
+	parser.add_argument('genomedb',type=str,help="location of genomes")
 	return parser.parse_args()
 
-def parse(outdir,a,b):
+def parse(outdir,genomedb,a,b):
 	count = len(os.listdir(os.path.join(outdir,a)))
 	seqdict = {}
 	print "Parsing files from {}...".format(a)
@@ -36,15 +37,13 @@ def parse(outdir,a,b):
 
 	unclust = 0
 	totalseqs = 0
-	count = len(os.listdir(os.path.join(outdir,b)))
+	strains = [line.rstrip() for line in open(os.path.join(outdir,b),"r")]
+	count = len(strains)
 	print "Parsing files from {}...".format(b)
-	for f in os.listdir(os.path.join(outdir,b)):
-		if f.startswith("CONSENSUS"):
-			continue
-		for seq in SeqIO.parse(open(os.path.join(outdir,b,f),'r'),'fasta'):
-			vals = seq.id.split("|")
-			if vals[1] not in seqdict[vals[0]]:
-				o.write(">{}\n{}\n".format(str(seq.id),str(seq.seq)))
+	for s in strains:
+		for seq in SeqIO.parse(open(os.path.join(genomedb,"pep",s+".pep.fa"),'r'),'fasta'):
+			if seq.id not in seqdict[s]:
+				o.write(">{}|{}\n{}\n".format(s,str(seq.id),str(seq.seq)))
 				unclust += 1
 			else:
 				pass
@@ -52,14 +51,14 @@ def parse(outdir,a,b):
 		count -= 1
 		if count == 0:
 			print "\tDone!"
-		elif count % 10 == 0:
+		elif count % 100 == 0:
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
 
 	print "\n{}\n".format("="*60)
 	print "For the {} portion:".format(a)
-	print totalseqs, "total sequences in the {} genomes".format(str(len(os.listdir(os.path.join(outdir,b)))))
+	print totalseqs, "total sequences in the {} genomes".format(str(len(strains)))
 	pct = (float(totalseqs)-float(unclust))*100/float(totalseqs)
 	print "{} sequences covered by the {} homolog groups: ({}%)".format(totalseqs-unclust,str(len(os.listdir(os.path.join(outdir,a)))),str(round(pct,1)))
 	return
@@ -68,9 +67,10 @@ def parse(outdir,a,b):
 def main():
 	args = parse_args()
 	outdir = os.path.abspath(args.outdir)
+	genomedb = os.path.abspath(args.genomedb)
 
-	parse(outdir,"homolog_fasta","faa")
-	parse(outdir,"prop_homolog_faa","prop_faa")
+	parse(outdir,genomedb,"homolog_fasta","strainlist.txt")
+	parse(outdir,genomedb,"prop_homolog_faa","prop_strainlist.txt")
 
 if __name__ == '__main__':
 	main()
