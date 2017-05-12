@@ -17,7 +17,14 @@ ExtractClusters.py
 ```
 #use profile HMMs to annotate many more genomes
 PropagateGroups.py
+MakeLocusTagMatrix.py
+```
+
+```
+#QC of clustering
+RarefactionPangenome.py
 ClassifyAllSequences.py
+PlotGroupSizes.py
 ```
 
 ```
