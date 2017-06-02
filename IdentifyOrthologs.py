@@ -183,6 +183,13 @@ def get_strains(outdir):
 	[strains.append(s) for s in [line.rstrip() for line in open(os.path.join(outdir,"prop_strainlist.txt"))]]
 	return strains
 
+def index_hmms(outdir):
+	print "Indexing all_groups.hmm..."
+	cmds = "hmmfetch --index {}".format(os.path.join(outdir,"all_groups.hmm"))
+	proc = subprocess.Popen(cmds.split())
+	proc.wait()
+	return
+
 def main():
 	args = parse_args()
 	outdir = os.path.abspath(args.outdir)
@@ -193,6 +200,7 @@ def main():
 	else:
 		orthos = parse_matrix(outdir)
 
+	index_hmms(outdir)
 	extract_hmms(orthos,outdir)
 	strains = get_strains(outdir)
 	concat_orthos(orthos,outdir,strains)
