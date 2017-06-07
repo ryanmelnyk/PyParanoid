@@ -136,11 +136,11 @@ def get_genes(strains,outdir):
 		genes["CONSENSUS"][seq.id] = str(seq.seq)
 	return genes
 
-def run_inparanoid(strains,outdir):
+def run_inparanoid(strains,outdir,pypath):
 	print "Running inparanoid on", len(strains), "strains..."
 	count = len(strains)
 	for s in strains:
-		cmds = "perl inparanoid2.pl {} {} {}".format(s,"CONSENSUS",outdir+"/prop_")
+		cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,s,"CONSENSUS",outdir+"/prop_")
 		proc = subprocess.Popen(cmds.split())
 		proc.wait()
 		count -= 1
@@ -153,14 +153,9 @@ def run_inparanoid(strains,outdir):
 	return
 
 def clean_up(outdir):
-	for f in os.listdir(os.path.join(outdir,"prop_m8")):
-		os.remove(os.path.join(outdir,"prop_m8",f))
-	for f in os.listdir(os.path.join(outdir,"prop_out")):
-		vals = f.split(".")
-		if vals[0] == vals[1]:
-			pass
-		else:
-			os.remove(os.path.join(outdir,"prop_out",f))
+	for g in ["prop_m8","prop_out","dmnd"]:
+		for f in os.listdir(os.path.join(outdir,g)):
+			os.remove(os.path.join(outdir,g,f))
 	return
 
 def parse_inparanoid(outdir,new_strains):
@@ -214,6 +209,8 @@ def dump_matrix(outdir):
 
 def main():
 	args = parse_args()
+	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
+	print pypath
 	outdir = os.path.abspath(args.outdir)
 	genomedb = os.path.abspath(args.genomedb)
 	new_strains = [line.rstrip() for line in open(os.path.abspath(args.new_strains),'r')]
@@ -224,7 +221,7 @@ def main():
 	run_diamond(new_strains,outdir)
 	genes = get_genes(new_strains,outdir)
 	parse_diamond(genes,outdir)
-	run_inparanoid(new_strains, outdir)
+	run_inparanoid(new_strains, outdir,pypath)
 	clean_up(outdir)
 	group_members = parse_inparanoid(outdir,new_strains)
 	extract_fastas(outdir,genes,group_members)
