@@ -151,7 +151,7 @@ def get_genes(strains,outdir):
 			genes[s][seq.id] = len(str(seq.seq))
 	return genes
 
-def run_inparanoid(strains,outdir):
+def run_inparanoid(strains,outdir,pypath):
 
 	pairs = list(itertools.combinations(strains,2))
 	count = len(pairs)
@@ -163,13 +163,13 @@ def run_inparanoid(strains,outdir):
 		if a in files:
 			files.remove(a)
 		else:
-			cmds = "perl inparanoid2.pl {} {} {}".format(p[0],p[1],outdir+"/")
+			cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,p[0],p[1],outdir+"/")
 			proc = subprocess.Popen(cmds.split())
 			proc.wait()
 		if b in files:
 			files.remove(b)
 		else:
-			cmds = "perl inparanoid2.pl {} {} {}".format(p[1],p[0],outdir+"/")
+			cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,p[1],p[0],outdir+"/")
 			proc = subprocess.Popen(cmds.split())
 			proc.wait()
 		count -= 1
@@ -211,6 +211,8 @@ def main():
 	genomedb = os.path.abspath(args.genomedb)
 	strains = [x.rstrip() for x in open(os.path.abspath(args.strainlist),'r')]
 	outdir = os.path.abspath(args.outdir)
+	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
+
 
 	if args.add:
 		print "adding"
@@ -224,7 +226,7 @@ def main():
 		[strains.append(s) for s in old_strains]
 		genes = get_genes(strains,outdir)
 		parse_diamond(genes,outdir)
-		run_inparanoid(strains, outdir)
+		run_inparanoid(strains, outdir,pypath)
 		clean_up(outdir)
 	else:
 		print "not adding"
@@ -234,7 +236,7 @@ def main():
 		run_diamond(strains,outdir)
 		genes = get_genes(strains,outdir)
 		parse_diamond(genes,outdir)
-		run_inparanoid(strains, outdir)
+		run_inparanoid(strains, outdir,pypath)
 		clean_up(outdir)
 
 if __name__ == '__main__':
