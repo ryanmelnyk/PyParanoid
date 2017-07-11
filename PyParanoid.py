@@ -10,6 +10,8 @@ def parse_args():
 	parser = argparse.ArgumentParser(description='''
 Master script for running PyParanoid process.
 
+TEST dev branch
+
 Note that default diamond uses 6 threads when requesting resources.
 	''')
 	parser.add_argument('genomedb',type=str,help='relative path to genomedb for raw data')
