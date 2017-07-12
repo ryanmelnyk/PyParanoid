@@ -10,9 +10,7 @@ def parse_args():
 	parser = argparse.ArgumentParser(description='''
 Master script for running PyParanoid process.
 
-TEST dev branch
-
-Note that default diamond uses 6 threads when requesting resources.
+modes: add, multi_setup, multi_parse
 	''')
 	parser.add_argument('genomedb',type=str,help='relative path to genomedb for raw data')
 	parser.add_argument('strainlist',type=str,help='text file, one strain per line. names should be "species" field from genome_metadata table')
@@ -157,6 +155,8 @@ def parse_diamond(genes,outdir):
 			newvals.append(str(int(vals[9])-int(vals[8])+1))
 			newvals.append("p:{}-{} h:{}-{}".format(vals[6],vals[7],vals[8],vals[9]))
 			o.write("\t".join(newvals)+"\n")
+		o.close()
+		os.remove(os.path.join(outdir,"m8",f))
 		count -= 1
 		if count == 0:
 			print "\tDone!"
@@ -175,11 +175,15 @@ def get_genes(strains,outdir):
 			genes[s][seq.id] = len(str(seq.seq))
 	return genes
 
-def run_inparanoid(strains,outdir,pypath):
-
+def run_inparanoid(strains,outdir,pypath,multi):
 	pairs = list(itertools.combinations(strains,2))
 	count = len(pairs)
-	print "Running inparanoid on", count, "pairs of strains..."
+	if multi:
+		jobfile = open(os.path.join(outdir,"inparanoid_jobs.sh"),'w')
+		print "Prepping InParanoid batch files..."
+	else:
+		print "Running InParanoid on", count, "pairs of strains..."
+
 	files = os.listdir(os.path.join(outdir,"paranoid_output"))
 	for p in pairs:
 		a = "{}.{}.txt".format(p[0],p[1])
@@ -188,26 +192,31 @@ def run_inparanoid(strains,outdir,pypath):
 			files.remove(a)
 		else:
 			cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,p[0],p[1],outdir+"/")
-			proc = subprocess.Popen(cmds.split())
-			proc.wait()
+			if multi:
+				jobfile.write("{}\n".format(cmds))
+			else:
+				proc = subprocess.Popen(cmds.split())
+				proc.wait()
 		if b in files:
 			files.remove(b)
 		else:
 			cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,p[1],p[0],outdir+"/")
-			proc = subprocess.Popen(cmds.split())
-			proc.wait()
-		count -= 1
-		if count == 0:
-			print "\tDone!"
-		elif count % 10 == 0:
-			print "\t"+str(count), "remaining..."
-		else:
-			pass
+			if multi:
+				jobfile.write("{}\n".format(cmds))
+			else:
+				proc = subprocess.Popen(cmds.split())
+				proc.wait()
+				count -= 1
+				if count == 0:
+					print "\tDone!"
+				elif count % 10 == 0:
+					print "\t"+str(count), "remaining..."
+				else:
+					pass
+
 	return
 
 def clean_up(outdir):
-	for f in os.listdir(os.path.join(outdir,"m8")):
-		os.remove(os.path.join(outdir,"m8",f))
 	for f in os.listdir(os.path.join(outdir,"out")):
 		vals = f.split(".")
 		if vals[0] == vals[1]:
@@ -238,7 +247,7 @@ def main():
 	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 	if args.mode:
-		if args.mode not in ["add","multi_setup","multi_parse","multi_paranoid"]:
+		if args.mode not in ["add","multi_setup","multi_parse"]:
 			print "Unknown mode!!! Exiting..."
 			sys.exit()
 
@@ -263,14 +272,23 @@ def main():
 		[strains.append(s) for s in old_strains]
 		genes = get_genes(strains,outdir)
 		parse_diamond(genes,outdir)
-		run_inparanoid(strains,outdir,pypath)
+		run_inparanoid(strains,outdir,pypath,False)
 		clean_up(outdir)
 	elif args.mode == "multi_setup":
-		pass
+		setupdir(outdir,strains,genomedb)
+		shutil.copy(os.path.abspath(args.strainlist),os.path.join(outdir,"strainlist.txt"))
+		make_diamond_databases(strains,outdir)
+		run_diamond(strains,outdir,True,cpus)
+		cmds = "split -a 2 -l {} {} {}".format((len(strains)**2)/(njobs-1),os.path.join(outdir,"diamond_jobs.sh"),os.path.join(outdir,"DIAMOND"))
+		proc = subprocess.Popen(cmds.split())
+		proc.wait()
 	elif args.mode == "multi_parse":
-		pass
-	elif args.mode == "multi_paranoid":
-		pass
+		genes = get_genes(strains,outdir)
+		parse_diamond(genes,outdir)
+		run_inparanoid(strains,outdir,pypath,True)
+		cmds = "split -a 2 -l {} {} {}".format((len(strains)*(len(strains)-1))/(njobs-1),os.path.join(outdir,"inparanoid_jobs.sh"),os.path.join(outdir,"INPARANOID"))
+		proc = subprocess.Popen(cmds.split())
+		proc.wait()
 	else:
 		setupdir(outdir,strains,genomedb)
 		shutil.copy(os.path.abspath(args.strainlist),os.path.join(outdir,"strainlist.txt"))
@@ -278,7 +296,7 @@ def main():
 		run_diamond(strains,outdir,False,cpus)
 		genes = get_genes(strains,outdir)
 		parse_diamond(genes,outdir)
-		run_inparanoid(strains, outdir,pypath)
+		run_inparanoid(strains,outdir,pypath,False)
 		clean_up(outdir)
 
 if __name__ == '__main__':

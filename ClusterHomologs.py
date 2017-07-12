@@ -42,12 +42,19 @@ def create_abc_file(outdir):
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
+		os.remove(os.path.join(outdir,"paranoid_output",f))
 	o.close()
 	return
 
 def clean_up(outdir):
 	for f in os.listdir(os.path.join(outdir,"paranoid_output")):
 		os.remove(os.path.join(outdir,"paranoid_output",f))
+	for f in os.listdir(os.path.join(outdir,"out")):
+		vals = f.split(".")
+		if vals[0] == vals[1]:
+			pass
+		else:
+			os.remove(os.path.join(outdir,"out",f))
 	return
 
 def run_mcxload(outdir):
