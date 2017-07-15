@@ -3,6 +3,7 @@
 #UBC Microbiology - Haney Lab
 
 import argparse, os, errno, shutil, subprocess
+import multiprocessing as mp
 import itertools, sys
 from Bio import SeqIO
 
@@ -10,14 +11,13 @@ def parse_args():
 	parser = argparse.ArgumentParser(description='''
 Master script for running PyParanoid process.
 
-modes: add, multi_setup, multi_parse
+modes: multi_setup, multi_parse
 	''')
 	parser.add_argument('genomedb',type=str,help='relative path to genomedb for raw data')
 	parser.add_argument('strainlist',type=str,help='text file, one strain per line. names should be "species" field from genome_metadata table')
 	parser.add_argument('outdir',type=str,help='folder to store output')
-	parser.add_argument('--cpus',type=int,help='number of CPUs to use for diamond tasks (default = 6)')
+	parser.add_argument('--cpus',type=int,help='number of CPUs to use for tasks. Defaults to # of cores available.')
 	parser.add_argument('--mode',type=str,help='mode of PyParanoid to run')
-	parser.add_argument('--njobs',type=int,help='use to specify number of batch files to make (default=10)')
 	return parser.parse_args()
 
 def setupdir(outdir,strains,genomedb):
@@ -27,7 +27,7 @@ def setupdir(outdir,strains,genomedb):
 		if exc.errno == errno.EEXIST:
 			print "Database folder exists:", outdir
 
-	for f in ["faa","dmnd","m8","out","paranoid_output","mcl"]:
+	for f in ["faa","m8","out","paranoid_output","mcl"]:
 		try:
 			os.makedirs(os.path.join(os.path.join(outdir,f)))
 		except OSError:
@@ -48,20 +48,18 @@ def setupdir(outdir,strains,genomedb):
 		o.close()
 	return
 
-def make_diamond_databases(strains,outdir):
+def make_diamond_databases(strains,outdir,cpus):
 	count = len(strains)
 	print "Making diamond databases for", count, "strains..."
+	o = open(os.path.join(outdir,"all_strains.faa"),'w')
 	for s in strains:
-		cmds = "diamond makedb --in {}/faa/{}.faa -d {}/dmnd/{}.dmnd --quiet --threads 6".format(outdir,s,outdir,s)
-		proc = subprocess.Popen(cmds.split())
-		proc.wait()
-		count -= 1
-		if count == 0:
-			print "\tDone!"
-		elif count % 10 == 0:
-			print "\t"+str(count), "remaining..."
-		else:
-			pass
+		o.write(open("{}/faa/{}.faa".format(outdir,s),'r').read())
+	o.close()
+
+	cmds = "diamond makedb --in {} -d {} --quiet --threads {}".format(os.path.join(outdir,"all_strains.faa"),os.path.join(outdir,"all_strains.dmnd"),cpus)
+	proc = subprocess.Popen(cmds.split())
+	proc.wait()
+	os.remove(os.path.join(outdir,"all_strains.faa"))
 	return
 
 def run_diamond(strains,outdir,multi,cpus):
@@ -69,11 +67,11 @@ def run_diamond(strains,outdir,multi,cpus):
 		jobfile = open(os.path.join(outdir,"diamond_jobs.sh"),'w')
 		print "Making jobfile for DIAMOND runs..."
 	else:
-		print "Running reflexive DIAMOND on all", len(strains), "strains..."
+		print "Running DIAMOND on all", len(strains), "strains..."
 
 	count = len(strains)
 	for s in strains:
-		cmds = "diamond blastp --query {}/faa/{}.faa -d {}/dmnd/{}.dmnd -o {}/m8/{}.{}.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,s,outdir,s,outdir,s,s,cpus)
+		cmds = "diamond blastp --query {}/faa/{}.faa -d {}/all_strains.dmnd -o {}/m8/{}.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,s,outdir,outdir,s,cpus)
 		if multi:
 			jobfile.write("{}\n".format(cmds))
 		else:
@@ -82,85 +80,43 @@ def run_diamond(strains,outdir,multi,cpus):
 			count -= 1
 			if count == 0:
 				print "\tDone!"
-			elif (count % 10 == 0):
-				print "\t"+str(count), "remaining..."
-			else:
-				pass
-
-	pairs = list(itertools.permutations(strains,2))
-	count = len(pairs)
-	if not multi:
-		print "Running pairwise diamond on all", count, "pairwise permutations..."
-	for p in list(pairs):
-		cmds = "diamond blastp --query {}/faa/{}.faa -d {}/dmnd/{}.dmnd -o {}/m8/{}.{}.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,p[0],outdir,p[1],outdir,p[0],p[1],cpus)
-		if multi:
-			jobfile.write("{}\n".format(cmds))
-		else:
-			proc = subprocess.Popen(cmds.split())
-			proc.wait()
-			count -= 1
-			if count == 0:
-				print "\tDone!"
-			elif count % 10 == 0:
+			elif (count % 100 == 0):
 				print "\t"+str(count), "remaining..."
 			else:
 				pass
 	return
 
-def run_diamond_on_old_strains(strains,outdir,old_strains,multi,cpus):
-	if multi:
-		jobfile = open(os.path.join("outdir","diamond_jobs.sh"),'a')
-	else:
-		count = 2 * len(strains) * len(old_strains)
-		print "Running pairwise diamond against all old strains:", count, "pairwise permutations ..."
+def parse_diamond(genes,outdir,strains):
+
+	count = len(strains)
+	print "Parsing diamond results for {} strains...".format(count)
 	for s in strains:
-		for t in old_strains:
-			cmds = "diamond blastp --query {}/faa/{}.faa -d {}/dmnd/{}.dmnd -o {}/m8/{}.{}.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,s,outdir,t,outdir,s,t,cpus)
-			if multi:
-				jobfile.write("{}\n".format(cmds))
-			else:
-				proc = subprocess.Popen(cmds.split())
-				proc.wait()
-			cmds = "diamond blastp --query {}/faa/{}.faa -d {}/dmnd/{}.dmnd -o {}/m8/{}.{}.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,t,outdir,s,outdir,t,s,cpus)
-			if multi:
-				jobfile.write("{}\n".format(cmds))
-			else:
-				proc = subprocess.Popen(cmds.split())
-				proc.wait()
-				count -= 2
-				if count == 0:
-					print "\tDone!"
-				elif count % 10 == 0:
-					print "\t"+str(count), "remaining..."
-				else:
-					pass
-	return
+		hits = {}
 
-
-def parse_diamond(genes,outdir):
-	print "Parsing diamond results..."
-	files = os.listdir(os.path.join(outdir,"m8"))
-	count = len(files)
-	for f in files:
-		vals = f.split(".")
-		a = vals[0]
-		b = vals[1]
-		o = open("{}/out/{}.{}.out".format(outdir,a,b),'w')
-		for line in open(os.path.join(outdir,"m8",f),'r'):
+		for line in open(os.path.join(outdir,"m8",s+".m8"),'r'):
 			vals = line.rstrip().split()
-			newvals = [vals[0],vals[1],vals[11],str(genes[a][vals[0]]), str(genes[b][vals[1]])]
+			target_strain = vals[1].split("|")[0]
+			if target_strain not in hits:
+				hits[target_strain] = []
+			newvals = [vals[0],vals[1],vals[11],str(genes[s][vals[0]]), str(genes[target_strain][vals[1]])]
 			newvals.append(str(int(vals[7])-int(vals[6])+1))
 			newvals.append(str(int(vals[9])-int(vals[8])+1))
 			newvals.append(str(int(vals[7])-int(vals[6])+1))
 			newvals.append(str(int(vals[9])-int(vals[8])+1))
 			newvals.append("p:{}-{} h:{}-{}".format(vals[6],vals[7],vals[8],vals[9]))
-			o.write("\t".join(newvals)+"\n")
-		o.close()
-		os.remove(os.path.join(outdir,"m8",f))
+			hits[target_strain].append(newvals)
+
+		for ts in hits:
+			o = open(os.path.join(outdir,"out","{}.{}.out".format(s,ts)),'w')
+			for h in hits[ts]:
+				o.write("{}\n".format("\t".join(h)))
+			o.close()
+
+		os.remove(os.path.join(outdir,"m8",s+".m8"))
 		count -= 1
 		if count == 0:
 			print "\tDone!"
-		elif count % 10 == 0:
+		elif count % 100 == 0:
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
@@ -175,128 +131,73 @@ def get_genes(strains,outdir):
 			genes[s][seq.id] = len(str(seq.seq))
 	return genes
 
-def run_inparanoid(strains,outdir,pypath,multi):
+def run_inparanoid(strains,outdir,pypath,multi,cpus):
 	pairs = list(itertools.combinations(strains,2))
-	count = len(pairs)
+
 	if multi:
 		jobfile = open(os.path.join(outdir,"inparanoid_jobs.sh"),'w')
 		print "Prepping InParanoid batch files..."
-	else:
-		print "Running InParanoid on", count, "pairs of strains..."
-
-	files = os.listdir(os.path.join(outdir,"paranoid_output"))
-	for p in pairs:
-		a = "{}.{}.txt".format(p[0],p[1])
-		b = "{}.{}.txt".format(p[1],p[0])
-		if a in files:
-			files.remove(a)
-		else:
+		for p in pairs:
 			cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,p[0],p[1],outdir+"/")
-			if multi:
-				jobfile.write("{}\n".format(cmds))
-			else:
-				proc = subprocess.Popen(cmds.split())
-				proc.wait()
-		if b in files:
-			files.remove(b)
-		else:
-			cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,p[1],p[0],outdir+"/")
-			if multi:
-				jobfile.write("{}\n".format(cmds))
-			else:
-				proc = subprocess.Popen(cmds.split())
-				proc.wait()
-				count -= 1
-				if count == 0:
-					print "\tDone!"
-				elif count % 10 == 0:
-					print "\t"+str(count), "remaining..."
-				else:
-					pass
+			jobfile.write("{}\n".format(cmds))
+		jobfile.close()
+	else:
+		count = len(pairs)
+		print "Running InParanoid on", count, "pairs of strains..."
+		pool = mp.Pool(processes=cpus)
+		[pool.apply_async(IP_RUN, args=(p,pypath,outdir,)) for p in pairs]
+		pool.close()
+		pool.join()
 
+	return
+
+def IP_RUN(p,pypath,outdir):
+	cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,p[0],p[1],outdir+"/")
+	proc = subprocess.Popen(cmds.split())
+	proc.wait()
 	return
 
 def clean_up(outdir):
 	for f in os.listdir(os.path.join(outdir,"out")):
-		vals = f.split(".")
-		if vals[0] == vals[1]:
-			pass
-		else:
-			os.remove(os.path.join(outdir,"out",f))
-	return
-
-def append_strains(outdir,strainlist):
-	o = open(os.path.join(outdir,"strainlist.txt"),'a')
-	for line in open(strainlist,'r'):
-		o.write(line)
-	return
-
-def check_unique(old_strains,strains):
-	for s in strains:
-		if s in old_strains:
-			print "New strain already in database. Check strainlist and try again. Exiting..."
-		else:
-			pass
+		os.remove(os.path.join(outdir,"out",f))
 	return
 
 def main():
 	args = parse_args()
 	genomedb = os.path.abspath(args.genomedb)
 	strains = [x.rstrip() for x in open(os.path.abspath(args.strainlist),'r')]
+	if len(set(strains)) != len(strains):
+		print "Duplicate entry in strainlist! Exiting..."
 	outdir = os.path.abspath(args.outdir)
 	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 	if args.mode:
-		if args.mode not in ["add","multi_setup","multi_parse"]:
+		if args.mode not in ["multi_setup","multi_parse"]:
 			print "Unknown mode!!! Exiting..."
 			sys.exit()
-
-	if args.njobs:
-		njobs = args.njobs
-	else:
-		njobs = 10
 
 	if args.cpus:
 		cpus = args.cpus
 	else:
-		cpus = 6
+		cpus = mp.cpu_count()
 
-	if args.mode == "add":
-		setupdir(outdir,strains,genomedb)
-		old_strains = [x.rstrip() for x in open(os.path.join(outdir,"strainlist.txt"),'r')]
-		check_unique(old_strains,strains)
-		append_strains(outdir,os.path.abspath(args.strainlist))
-		make_diamond_databases(strains,outdir)
-		run_diamond(strains,outdir,False,cpus)
-		run_diamond_on_old_strains(strains,outdir,old_strains,False,cpus)
-		[strains.append(s) for s in old_strains]
-		genes = get_genes(strains,outdir)
-		parse_diamond(genes,outdir)
-		run_inparanoid(strains,outdir,pypath,False)
-		clean_up(outdir)
-	elif args.mode == "multi_setup":
+	if args.mode == "multi_setup":
 		setupdir(outdir,strains,genomedb)
 		shutil.copy(os.path.abspath(args.strainlist),os.path.join(outdir,"strainlist.txt"))
-		make_diamond_databases(strains,outdir)
+		make_diamond_databases(strains,outdir,cpus)
 		run_diamond(strains,outdir,True,cpus)
-		cmds = "split -a 2 -l {} {} {}".format((len(strains)**2)/(njobs-1),os.path.join(outdir,"diamond_jobs.sh"),os.path.join(outdir,"DIAMOND"))
-		proc = subprocess.Popen(cmds.split())
-		proc.wait()
 	elif args.mode == "multi_parse":
 		genes = get_genes(strains,outdir)
-		parse_diamond(genes,outdir)
-		run_inparanoid(strains,outdir,pypath,True)
-		cmds = "split -a 2 -l {} {} {}".format((len(strains)*(len(strains)-1))/(njobs-1),os.path.join(outdir,"inparanoid_jobs.sh"),os.path.join(outdir,"INPARANOID"))
-		proc = subprocess.Popen(cmds.split())
-		proc.wait()
+		parse_diamond(genes,outdir,strains)
+		run_inparanoid(strains,outdir,pypath,True,cpus)
 	else:
 		setupdir(outdir,strains,genomedb)
 		shutil.copy(os.path.abspath(args.strainlist),os.path.join(outdir,"strainlist.txt"))
-		make_diamond_databases(strains,outdir)
+		make_diamond_databases(strains,outdir,cpus)
 		run_diamond(strains,outdir,False,cpus)
 		genes = get_genes(strains,outdir)
-		parse_diamond(genes,outdir)
-		run_inparanoid(strains,outdir,pypath,False)
+		parse_diamond(genes,outdir,strains)
+		run_inparanoid(strains,outdir,pypath,False,cpus)
 		clean_up(outdir)
 
 if __name__ == '__main__':
