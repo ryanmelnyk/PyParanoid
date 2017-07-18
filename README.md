@@ -44,6 +44,10 @@ http://hmmer.org/download.html - Download the newest version for your operating 
 ##### mcl
 mcl can be found [here](https://www.micans.org/mcl/index.html?sec_software).
 
+## Running PyParanoid
+
+PyParanoid is a pipeline for rapid identification of homologous gene families in a set of reference genomes. These gene families are assembled into a database which is then used to annotate additional strains and inform homology-driven comparative genomics.
+
 
 
 
@@ -67,16 +71,4 @@ MakeLocusTagMatrix.py
 RarefactionPangenome.py
 ClassifyAllSequences.py
 PlotGroupSizes.py
-```
-
-```
-#generate a whole genome alignment
-IdentifyOrthologs.py
-Jackknife.py
-```
-
-```
-#to identify sequences
-QueryClusters.py
-PlotTreeGroups.py
 ```

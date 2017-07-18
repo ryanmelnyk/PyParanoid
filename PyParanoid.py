@@ -27,7 +27,7 @@ def setupdir(outdir,strains,genomedb):
 		if exc.errno == errno.EEXIST:
 			print "Database folder exists:", outdir
 
-	for f in ["faa","m8","out","paranoid_output","mcl"]:
+	for f in ["faa","m8","out","paranoid_output","mcl","dmnd_tmp"]:
 		try:
 			os.makedirs(os.path.join(os.path.join(outdir,f)))
 		except OSError:
@@ -71,7 +71,7 @@ def run_diamond(strains,outdir,multi,cpus):
 
 	count = len(strains)
 	for s in strains:
-		cmds = "diamond blastp --query {}/faa/{}.faa -d {}/all_strains.dmnd -o {}/m8/{}.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,s,outdir,outdir,s,cpus)
+		cmds = "diamond blastp --query {}/faa/{}.faa -d {}/all_strains.dmnd -t {}/dmnd_tmp -o {}/m8/{}.m8 -f tab --max-target-seqs {} --min-score 50 --quiet --threads {}".format(outdir,s,outdir,outdir,outdir,s,len(strains)*10,cpus)
 		if multi:
 			jobfile.write("{}\n".format(cmds))
 		else:
@@ -80,7 +80,7 @@ def run_diamond(strains,outdir,multi,cpus):
 			count -= 1
 			if count == 0:
 				print "\tDone!"
-			elif (count % 100 == 0):
+			elif count % 20 == 0:
 				print "\t"+str(count), "remaining..."
 			else:
 				pass
@@ -116,7 +116,7 @@ def parse_diamond(genes,outdir,strains):
 		count -= 1
 		if count == 0:
 			print "\tDone!"
-		elif count % 100 == 0:
+		elif count % 20 == 0:
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
