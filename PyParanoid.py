@@ -18,9 +18,10 @@ modes: multi_setup, multi_parse
 	parser.add_argument('outdir',type=str,help='folder to store output')
 	parser.add_argument('--cpus',type=int,help='number of CPUs to use for tasks. Defaults to # of cores available.')
 	parser.add_argument('--mode',type=str,help='mode of PyParanoid to run')
+	parser.add_argument('--debug',action="store_true",help="don't clean up intermediate files")
 	return parser.parse_args()
 
-def setupdir(outdir,strains,genomedb):
+def setupdir(strains,genomedb):
 	try:
 		os.makedirs(outdir)
 	except OSError as exc:
@@ -48,7 +49,7 @@ def setupdir(outdir,strains,genomedb):
 		o.close()
 	return
 
-def make_diamond_databases(strains,outdir,cpus):
+def make_diamond_databases(strains):
 	count = len(strains)
 	print "Making diamond databases for", count, "strains..."
 	o = open(os.path.join(outdir,"all_strains.faa"),'w')
@@ -62,7 +63,7 @@ def make_diamond_databases(strains,outdir,cpus):
 	os.remove(os.path.join(outdir,"all_strains.faa"))
 	return
 
-def run_diamond(strains,outdir,multi,cpus):
+def run_diamond(strains,multi):
 	if multi:
 		jobfile = open(os.path.join(outdir,"diamond_jobs.sh"),'w')
 		print "Making jobfile for DIAMOND runs..."
@@ -86,7 +87,7 @@ def run_diamond(strains,outdir,multi,cpus):
 				pass
 	return
 
-def parse_diamond(genes,outdir,strains):
+def parse_diamond(genes,strains):
 
 	count = len(strains)
 	print "Parsing diamond results for {} strains...".format(count)
@@ -111,8 +112,8 @@ def parse_diamond(genes,outdir,strains):
 			for h in hits[ts]:
 				o.write("{}\n".format("\t".join(h)))
 			o.close()
-
-		os.remove(os.path.join(outdir,"m8",s+".m8"))
+		if not debug:
+			os.remove(os.path.join(outdir,"m8",s+".m8"))
 		count -= 1
 		if count == 0:
 			print "\tDone!"
@@ -122,7 +123,7 @@ def parse_diamond(genes,outdir,strains):
 			pass
 	return
 
-def get_genes(strains,outdir):
+def get_genes(strains):
 	print "Getting gene lengths..."
 	genes = {}
 	for s in strains:
@@ -131,7 +132,7 @@ def get_genes(strains,outdir):
 			genes[s][seq.id] = len(str(seq.seq))
 	return genes
 
-def run_inparanoid(strains,outdir,pypath,multi,cpus):
+def run_inparanoid(strains,multi):
 	pairs = list(itertools.combinations(strains,2))
 
 	if multi:
@@ -151,15 +152,16 @@ def run_inparanoid(strains,outdir,pypath,multi,cpus):
 
 	return
 
-def IP_RUN(p,pypath,outdir):
+def IP_RUN(p):
 	cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,p[0],p[1],outdir+"/")
 	proc = subprocess.Popen(cmds.split())
 	proc.wait()
 	return
 
-def clean_up(outdir):
-	for f in os.listdir(os.path.join(outdir,"out")):
-		os.remove(os.path.join(outdir,"out",f))
+def clean_up():
+	if not debug:
+		for f in os.listdir(os.path.join(outdir,"out")):
+			os.remove(os.path.join(outdir,"out",f))
 	return
 
 def main():
@@ -168,6 +170,8 @@ def main():
 	strains = [x.rstrip() for x in open(os.path.abspath(args.strainlist),'r')]
 	if len(set(strains)) != len(strains):
 		print "Duplicate entry in strainlist! Exiting..."
+
+	global outdir, pypath
 	outdir = os.path.abspath(args.outdir)
 	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
@@ -176,28 +180,37 @@ def main():
 			print "Unknown mode!!! Exiting..."
 			sys.exit()
 
+	global cpus
 	if args.cpus:
 		cpus = args.cpus
 	else:
 		cpus = mp.cpu_count()
 
-	if args.mode == "multi_setup":
-		setupdir(outdir,strains,genomedb)
-		shutil.copy(os.path.abspath(args.strainlist),os.path.join(outdir,"strainlist.txt"))
-		make_diamond_databases(strains,outdir,cpus)
-		run_diamond(strains,outdir,True,cpus)
-	elif args.mode == "multi_parse":
-		genes = get_genes(strains,outdir)
-		parse_diamond(genes,outdir,strains)
-		run_inparanoid(strains,outdir,pypath,True,cpus)
+
+	global debug
+	if args.debug:
+		debug = True
 	else:
-		setupdir(outdir,strains,genomedb)
+		debug = False
+
+
+	if args.mode == "multi_setup":
+		setupdir(strains,genomedb)
 		shutil.copy(os.path.abspath(args.strainlist),os.path.join(outdir,"strainlist.txt"))
-		make_diamond_databases(strains,outdir,cpus)
-		run_diamond(strains,outdir,False,cpus)
-		genes = get_genes(strains,outdir)
-		parse_diamond(genes,outdir,strains)
-		run_inparanoid(strains,outdir,pypath,False,cpus)
+		make_diamond_databases(strains)
+		run_diamond(strains,True)
+	elif args.mode == "multi_parse":
+		genes = get_genes(strains)
+		parse_diamond(genes,strains)
+		run_inparanoid(strains,True)
+	else:
+		setupdir(strains,genomedb)
+		shutil.copy(os.path.abspath(args.strainlist),os.path.join(outdir,"strainlist.txt"))
+		make_diamond_databases(strains)
+		run_diamond(strains,False)
+		genes = get_genes(strains)
+		parse_diamond(genes,strains)
+		run_inparanoid(strains,False)
 		clean_up(outdir)
 
 if __name__ == '__main__':

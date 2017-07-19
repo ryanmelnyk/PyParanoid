@@ -48,7 +48,12 @@ mcl can be found [here](https://www.micans.org/mcl/index.html?sec_software).
 
 PyParanoid is a pipeline for rapid identification of homologous gene families in a set of reference genomes. These gene families are assembled into a database which is then used to annotate additional strains and inform homology-driven comparative genomics.
 
+#### Input
 
+Ideally, the input for PyParanoid should come from a genome database set up using
+my dataset management repo [genomeDB_toolkit](https://github.com/ryanmelnyk/genomeDB_toolkit).
+This is a set of scripts that can download genomic data for bacteria and archaea from Ensembl and integrate them into a single
+database with local genomes annotated using Prokka.  Using genomeDB_toolkit will ensure that all downstream analyses using GenomeVIs
 
 
 ## cookbook
