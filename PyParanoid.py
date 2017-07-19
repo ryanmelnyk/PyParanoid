@@ -3,6 +3,7 @@
 #UBC Microbiology - Haney Lab
 
 import argparse, os, errno, shutil, subprocess
+import pyparanoid.pyparanoid as pp
 import multiprocessing as mp
 import itertools, sys
 from Bio import SeqIO
@@ -211,7 +212,7 @@ def main():
 		genes = get_genes(strains)
 		parse_diamond(genes,strains)
 		run_inparanoid(strains,False)
-		clean_up(outdir)
+		clean_up()
 
 if __name__ == '__main__':
 	main()
