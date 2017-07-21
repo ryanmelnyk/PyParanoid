@@ -18,7 +18,7 @@ def parse_args():
 	parser = argparse.ArgumentParser(description='''
 Master script for running PyParanoid process.
 
-modes: multi_setup, multi_parse, cluster, extract
+modes: setup, parse, cluster, extract
 	''')
 	parser.add_argument('genomedb',type=str,help='relative path to genomedb for raw data')
 	parser.add_argument('strainlist',type=str,help='text file, one strain per line. names should be "species" field from genome_metadata table')
@@ -29,6 +29,7 @@ modes: multi_setup, multi_parse, cluster, extract
 	parser.add_argument('--threshold',type=int,help="minimum size of groups")
 	parser.add_argument('--inflate', type=float,help="inflation parameter for mcl, default = 2")
 	parser.add_argument('--verbose',action="store_true",help="Print progress to STDOUT")
+	parser.add_argument('--multi',action="store_true",help="use only with mode setup and parse")
 	return parser.parse_args()
 
 def setupdir(strains,genomedb):
@@ -405,7 +406,7 @@ def main():
 	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 	if args.mode:
-		if args.mode not in ["multi_setup","multi_parse","extract","cluster"]:
+		if args.mode not in ["setup","parse","extract","cluster"]:
 			print "Unknown mode!!! Exiting..."
 			sys.exit()
 
@@ -436,22 +437,20 @@ def main():
 	else:
 		threshold = 0
 
+	if args.multi:
+		multi = True
+	else:
+		multi = False
 
 	if not args.mode or args.mode == "multi_setup":
 		setupdir(strains,genomedb)
 		shutil.copy(os.path.abspath(args.strainlist),os.path.join(outdir,"strainlist.txt"))
 		make_diamond_databases(strains)
-		if not args.mode:
-			run_diamond(strains,False)
-		else:
-			run_diamond(strains,True)
-	if not args.mode or args.mode == "multi_parse":
+		run_diamond(strains,multi)
+	if not args.mode or args.mode == "parse":
 		genes = get_genes(strains)
 		parse_diamond(genes,strains)
-		if not args.mode:
-			run_inparanoid(strains,False)
-		else:
-			run_inparanoid(strains,True)
+		run_inparanoid(strains,multi)
 	if not args.mode or args.mode == "cluster":
 		if clean:
 			pp.cleanup(os.path.join(outdir,"out"))
