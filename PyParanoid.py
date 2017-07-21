@@ -235,7 +235,7 @@ def mcxload():
 	return
 
 def mcl_cluster(inflate):
-	cmds = ["mcl",os.path.join(outdir,"mcl","data.mci"),"-t",str(cpus),"-I",str(inflate),"-o", os.path.join(outdir,"mcl","mcl.out")]
+	cmds = ["mcl",os.path.join(outdir,"mcl","data.mci"),"-te",str(cpus),"-I",str(inflate),"-o", os.path.join(outdir,"mcl","mcl.out")]
 	proc = subprocess.Popen(cmds)
 	proc.wait()
 	return
