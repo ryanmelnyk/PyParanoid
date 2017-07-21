@@ -4,7 +4,7 @@
 #UBC Microbiology - Haney Lab
 
 import os
-from Bio import SeqIO
+# from Bio import SeqIO
 
 ### Attempting to re-implement InParanoid algorithm
 
@@ -67,3 +67,17 @@ from Bio import SeqIO
 # 	for o in orths:
 # 		print o,orths[o]
 # 	return
+
+def createdirs(outdir, folders):
+	for f in folders:
+		try:
+			os.makedirs(os.path.join(os.path.join(outdir,f)))
+		except OSError:
+			print "Subfolder exists:", os.path.join(outdir,f)
+	return
+
+def cleanup(d):
+	print "Cleaning up", d
+	for f in os.listdir(d):
+		os.remove(os.path.join(d,f))
+	return

@@ -29,6 +29,8 @@ brew tap homebrew/science
 brew install diamond
 brew install hmmer
 brew install mcl
+brew install cd-hit
+brew install muscle
 ```
 
 #### Manual installation
@@ -44,6 +46,9 @@ http://hmmer.org/download.html - Download the newest version for your operating 
 ##### mcl
 mcl can be found [here](https://www.micans.org/mcl/index.html?sec_software).
 
+##### cd-hit
+CD-hit can be found [here](http://weizhongli-lab.org/cd-hit/)
+
 ## Running PyParanoid
 
 PyParanoid is a pipeline for rapid identification of homologous gene families in a set of reference genomes. These gene families are assembled into a database which is then used to annotate additional strains and inform homology-driven comparative genomics.
@@ -55,6 +60,11 @@ my dataset management repo [genomeDB_toolkit](https://github.com/ryanmelnyk/geno
 This is a set of scripts that can download genomic data for bacteria and archaea from Ensembl and integrate them into a single
 database with local genomes annotated using Prokka.  Using genomeDB_toolkit will ensure that all downstream analyses using GenomeVIs
 
+## Example applications and test data
+
+### Species tree
+
+###
 
 ## cookbook
 
