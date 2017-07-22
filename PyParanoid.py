@@ -72,7 +72,7 @@ def make_diamond_databases(strains):
 	os.remove(os.path.join(outdir,"all_strains.faa"))
 	return
 
-def run_diamond(strains,multi):
+def run_diamond(strains):
 	if multi:
 		jobfile = open(os.path.join(outdir,"diamond_jobs.sh"),'w')
 		if verbose:
@@ -149,7 +149,7 @@ def get_genes(strains):
 			genes[s][seq.id] = len(str(seq.seq))
 	return genes
 
-def run_inparanoid(strains,multi):
+def run_inparanoid(strains):
 	pairs = list(itertools.combinations(strains,2))
 
 	if multi:
@@ -235,7 +235,7 @@ def mcxload():
 	proc.wait()
 	return
 
-def mcl_cluster(inflate):
+def mcl_cluster():
 	cmds = ["mcl",os.path.join(outdir,"mcl","data.mci"),"-te",str(cpus),"-I",str(inflate),"-o", os.path.join(outdir,"mcl","mcl.out")]
 	proc = subprocess.Popen(cmds)
 	proc.wait()
@@ -281,16 +281,13 @@ def parse_clusters(strains, seq_number):
 	o.close()
 	return
 
-def parse_groups(seqdata, desc, t):
+def parse_groups(seqdata, desc):
 	group_count = 1
 	descript_out = open(os.path.join(outdir, "group_descriptions.txt"),'w')
 	print "Writing fasta files and parsing descriptions..."
-	###
-	# by default choose clustering where inflation == 2.0
-	###
 	for line in open(os.path.join(outdir,"mcl","clusters.txt")):
 		vals = line.rstrip().split()
-		if len(vals) <= t:
+		if len(vals) <= threshold:
 			continue
 		else:
 			o = open(os.path.join(outdir,"homolog_faa","group_{}.faa".format(str(group_count).zfill(5))),'w')
@@ -302,7 +299,7 @@ def parse_groups(seqdata, desc, t):
 			o.close()
 			group_count += 1
 	if verbose:
-		print group_count, "groups equal to or larger than", t, "sequences."
+		print group_count, "groups equal to or larger than", threshold, "sequences."
 	return
 
 def cdhit_seqs():
@@ -428,15 +425,19 @@ def main():
 	else:
 		verbose = False
 
+	global inflate
 	if args.inflate:
 		inflate = args.inflate
 	else:
 		inflate = 2.0
+
+	global threshold
 	if args.threshold:
 		threshold = args.threshold
 	else:
 		threshold = 0
 
+	global multi
 	if args.multi:
 		multi = True
 	else:
@@ -446,24 +447,24 @@ def main():
 		setupdir(strains,genomedb)
 		shutil.copy(os.path.abspath(args.strainlist),os.path.join(outdir,"strainlist.txt"))
 		make_diamond_databases(strains)
-		run_diamond(strains,multi)
+		run_diamond(strains)
 	if not args.mode or args.mode == "parse":
 		genes = get_genes(strains)
 		parse_diamond(genes,strains)
-		run_inparanoid(strains,multi)
+		run_inparanoid(strains)
 	if not args.mode or args.mode == "cluster":
 		if clean:
 			pp.cleanup(os.path.join(outdir,"out"))
 		pp.createdirs(outdir,["mcl"])
 		create_abc_file()
 		mcxload()
-		mcl_cluster(inflate)
+		mcl_cluster()
 		mcxdump()
 	if not args.mode or args.mode == "extract":
 		seqdata, desc, seq_number = hash_fastas()
 		pp.createdirs(outdir,["homolog_faa","clustered","aligned","hmms","consensus_seqs"])
 		parse_clusters(strains,seq_number)
-		parse_groups(seqdata,desc,threshold)
+		parse_groups(seqdata,desc)
 		cdhit_seqs()
 		align_groups()
 		if clean:
@@ -476,6 +477,7 @@ def main():
 		if clean:
 			pp.cleanup(os.path.join(outdir,"hmms"))
 			pp.cleanup(os.path.join(outdir,"consensus_seqs"))
+		pp.dump_matrices(outdir)
 
 
 if __name__ == '__main__':
