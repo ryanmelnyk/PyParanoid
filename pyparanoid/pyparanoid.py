@@ -4,7 +4,7 @@
 #UBC Microbiology - Haney Lab
 
 import os
-# from Bio import SeqIO
+from Bio import SeqIO
 
 ### Attempting to re-implement InParanoid algorithm
 
@@ -80,4 +80,41 @@ def cleanup(d):
 	print "Cleaning up", d
 	for f in os.listdir(d):
 		os.remove(os.path.join(d,f))
+	return
+
+def dump_matrices(outdir):
+	o_loc = open(os.path.join(outdir,"locustag_matrix.txt"),'w')
+	o_hom = open(os.path.join(outdir,"homolog_matrix.txt"),'w')
+	strains = [line.rstrip() for line in open(os.path.join(outdir,"strainlist.txt"),'r')]
+	try:
+		[strains.append(s) for s in [line.rstrip() for line in open(os.path.join(outdir,"prop_strainlist.txt"),'r')]]
+	except IOError:
+		pass
+
+	o_loc.write("\t{}\n".format("\t".join(strains)))
+	o_hom.write("\t{}\n".format("\t".join(strains)))
+
+	for f in os.listdir(os.path.join(outdir,"homolog_faa")):
+		hits = {s : [] for s in strains}
+		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_faa",f),'r'),'fasta'):
+			hits[seq.id.split("|")[0]].append(seq.id.split("|")[1])
+		try:
+			for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",f),'r'),'fasta'):
+				hits[seq.id.split("|")[0]].append(seq.id.split("|")[1])
+		except IOError:
+			pass
+		thisline = []
+		counts = []
+		for s in strains:
+			if len(hits[s]) == 0:
+				thisline.append("None")
+				counts.append("0")
+			elif len(hits[s]) == 1:
+				thisline.append(hits[s][0])
+				counts.append("1")
+			else:
+				thisline.append(";".join(hits[s]))
+				counts.append(str(len(hits[s])))
+		o_loc.write("{}\t{}\n".format(f.split(".")[0],"\t".join(thisline)))
+		o_hom.write("{}\t{}\n".format(f.split(".")[0],"\t".join(counts)))
 	return

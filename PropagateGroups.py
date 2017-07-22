@@ -2,7 +2,12 @@
 #schmelnyk@gmail.com
 #UBC Microbiology - Haney Lab
 
-import os, argparse, sys, subprocess, shutil
+import os
+import argparse
+import sys
+import subprocess
+import shutil
+import multiprocessing as mp
 from Bio import SeqIO
 
 def parse_args():
@@ -12,9 +17,10 @@ Using consensus sequences for each homolog group to propagate to new genomes.
 	parser.add_argument('outdir', type=str,help='path to directory containing PyParanoid output')
 	parser.add_argument('genomedb', type=str,help='path to genome database')
 	parser.add_argument('new_strains',type=str,help='path to list of new strains')
+	parser.add_argument('--cpus',type=int,help='number of cpus to use - defaults to # available')
 	return parser.parse_args()
 
-def check_strains(new_strains,genomedb,outdir):
+def check_strains(new_strains,genomedb):
 	old_strains = [line.rstrip() for line in open(os.path.join(outdir,"strainlist.txt"),'r')]
 	try:
 		for line in open(os.path.join(outdir,"prop_strainlist.txt"),'r'):
@@ -45,19 +51,11 @@ def check_strains(new_strains,genomedb,outdir):
 	shutil.copy(os.path.join(outdir,"all_groups.faa"),os.path.join(outdir,"prop_faa","CONSENSUS.faa"))
 	return
 
-def setupdir(outdir):
-	for f in ["prop_faa","prop_dmnd","prop_m8","prop_out","prop_paranoid_output","prop_homolog_faa"]:
-		try:
-			os.makedirs(os.path.join(os.path.join(outdir,f)))
-		except OSError:
-			print "Subfolder exists:", outdir
-	return
-
-def make_diamond_databases(strains,outdir):
+def make_diamond_databases(strains):
 	count = len(strains)
 	print "Making diamond databases for", count, "strains..."
 	for s in strains:
-		cmds = "diamond makedb --in {}/prop_faa/{}.faa -d {}/prop_dmnd/{}.dmnd --quiet --threads 6".format(outdir,s,outdir,s)
+		cmds = "diamond makedb --in {}/prop_faa/{}.faa -d {}/prop_dmnd/{}.dmnd --quiet --threads {}".format(outdir,s,outdir,s,cpus)
 		proc = subprocess.Popen(cmds.split())
 		proc.wait()
 		count -= 1
@@ -67,22 +65,22 @@ def make_diamond_databases(strains,outdir):
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
-	cmds = "diamond makedb --in {}/all_groups.faa -d {}/all_groups.dmnd --quiet --threads 6".format(outdir,outdir)
+	cmds = "diamond makedb --in {}/all_groups.faa -d {}/all_groups.dmnd --quiet --threads {}".format(outdir,outdir,cpus)
 	proc = subprocess.Popen(cmds.split())
 	proc.wait()
 	return
 
-def run_diamond(strains,outdir):
+def run_diamond(strains):
 	print "Running diamond on all", len(strains), "strains..."
 	count = len(strains)
 	for s in strains:
-		cmds = "diamond blastp --query {}/prop_faa/{}.faa -d {}/prop_dmnd/{}.dmnd -o {}/prop_m8/{}.{}.m8 -f tab --min-score 50 --quiet --threads 6".format(outdir,s,outdir,s,outdir,s,s)
+		cmds = "diamond blastp --query {}/prop_faa/{}.faa -d {}/prop_dmnd/{}.dmnd -o {}/prop_m8/{}.{}.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,s,outdir,s,outdir,s,s,cpus)
 		proc = subprocess.Popen(cmds.split())
 		proc.wait()
-		cmds = "diamond blastp --query {}/prop_faa/{}.faa -d {}/all_groups.dmnd -o {}/prop_m8/{}.CONSENSUS.m8 -f tab --min-score 50 --quiet --threads 6".format(outdir,s,outdir,outdir,s)
+		cmds = "diamond blastp --query {}/prop_faa/{}.faa -d {}/all_groups.dmnd -o {}/prop_m8/{}.CONSENSUS.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,s,outdir,outdir,s,cpus)
 		proc = subprocess.Popen(cmds.split())
 		proc.wait()
-		cmds = "diamond blastp --query {}/all_groups.faa -d {}/prop_dmnd/{}.dmnd -o {}/prop_m8/CONSENSUS.{}.m8 -f tab --min-score 50 --quiet --threads 6".format(outdir,outdir,s,outdir,s)
+		cmds = "diamond blastp --query {}/all_groups.faa -d {}/prop_dmnd/{}.dmnd -o {}/prop_m8/CONSENSUS.{}.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,outdir,s,outdir,s,cpus)
 		proc = subprocess.Popen(cmds.split())
 		proc.wait()
 		count -= 1
@@ -92,12 +90,12 @@ def run_diamond(strains,outdir):
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
-	cmds = "diamond blastp --query {}/all_groups.faa -d {}/all_groups.dmnd -o {}/prop_m8/CONSENSUS.CONSENSUS.m8 -f tab --min-score 50 --quiet --threads 6".format(outdir,outdir,outdir)
+	cmds = "diamond blastp --query {}/all_groups.faa -d {}/all_groups.dmnd -o {}/prop_m8/CONSENSUS.CONSENSUS.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,outdir,outdir,cpus)
 	proc = subprocess.Popen(cmds.split())
 	proc.wait()
 	return
 
-def parse_diamond(genes,outdir):
+def parse_diamond(genes):
 	print "Parsing diamond results..."
 	files = os.listdir(os.path.join(outdir,"prop_m8"))
 	count = len(files)
@@ -124,7 +122,7 @@ def parse_diamond(genes,outdir):
 			pass
 	return
 
-def get_genes(strains,outdir):
+def get_genes(strains):
 	print "Getting gene lengths..."
 	genes = {}
 	for s in strains:
@@ -136,7 +134,7 @@ def get_genes(strains,outdir):
 		genes["CONSENSUS"][seq.id] = str(seq.seq)
 	return genes
 
-def run_inparanoid(strains,outdir,pypath):
+def run_inparanoid(strains,pypath):
 	print "Running inparanoid on", len(strains), "strains..."
 	count = len(strains)
 	for s in strains:
@@ -152,13 +150,7 @@ def run_inparanoid(strains,outdir,pypath):
 			pass
 	return
 
-def clean_up(outdir):
-	for g in ["prop_m8","prop_out","dmnd"]:
-		for f in os.listdir(os.path.join(outdir,g)):
-			os.remove(os.path.join(outdir,g,f))
-	return
-
-def parse_inparanoid(outdir,new_strains):
+def parse_inparanoid(new_strains):
 	group_members = {}
 	print new_strains
 	for s in new_strains:
@@ -180,7 +172,7 @@ def parse_inparanoid(outdir,new_strains):
 
 	return group_members
 
-def extract_fastas(outdir,genes,group_members):
+def extract_fastas(genes,group_members):
 	for g in group_members:
 		o = open(os.path.join(outdir,"prop_homolog_faa",g.split("-")[0]+".faa"),'a')
 		for h in group_members[g]:
@@ -188,44 +180,32 @@ def extract_fastas(outdir,genes,group_members):
 		o.close()
 	return
 
-def dump_matrix(outdir):
-	o = open(os.path.join(outdir,"homolog_matrix.txt"),'w')
-	strains = [line.rstrip() for line in open(os.path.join(outdir,"strainlist.txt"),'r')]
-	[strains.append(s) for s in [line.rstrip() for line in open(os.path.join(outdir,"prop_strainlist.txt"),'r')]]
-
-	o.write("\t{}\n".format("\t".join(strains)))
-
-	for f in os.listdir(os.path.join(outdir,"homolog_fasta")):
-		hits = []
-		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_fasta",f),'r'),'fasta'):
-			hits.append(seq.id.split("|")[0])
-		try:
-			for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",f),'r'),'fasta'):
-				hits.append(seq.id.split("|")[0])
-		except IOError:
-			pass
-		o.write("{}\t{}\n".format(f.split(".")[0],"\t".join([str(hits.count(s)) for s in strains])))
-	return
-
 def main():
 	args = parse_args()
 	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
-	print pypath
+	global outdir
 	outdir = os.path.abspath(args.outdir)
 	genomedb = os.path.abspath(args.genomedb)
 	new_strains = [line.rstrip() for line in open(os.path.abspath(args.new_strains),'r')]
 
-	setupdir(outdir)
-	check_strains(new_strains,genomedb,outdir)
-	make_diamond_databases(new_strains,outdir)
-	run_diamond(new_strains,outdir)
-	genes = get_genes(new_strains,outdir)
-	parse_diamond(genes,outdir)
-	run_inparanoid(new_strains, outdir,pypath)
-	clean_up(outdir)
+	if args.cpus:
+		cpus = args.cpus
+	else:
+		cpus = mp.cpu_count()
+
+	setupdir()
+	check_strains(new_strains,genomedb)
+	make_diamond_databases(new_strains)
+	run_diamond(new_strains)
+	genes = get_genes(new_strains)
+	parse_diamond(genes)
+	run_inparanoid(new_strains,pypath)
+	for f in ["prop_m8","prop_out","dmnd"]:
+		pp.cleanup(os.path.join(outdir,f))
 	group_members = parse_inparanoid(outdir,new_strains)
 	extract_fastas(outdir,genes,group_members)
-	dump_matrix(outdir)
+	pp.dump_matrices(outdir)
+	pp.createdirs(outdir,["prop_faa","prop_dmnd","prop_m8","prop_out","prop_paranoid_output","prop_homolog_faa"])
 
 if __name__ == '__main__':
 	main()
