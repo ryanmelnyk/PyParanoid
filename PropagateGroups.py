@@ -200,7 +200,7 @@ def main():
 	genes = get_genes(new_strains)
 	parse_diamond(genes)
 	run_inparanoid(new_strains,pypath)
-	for f in ["prop_m8","prop_out","dmnd"]:
+	for f in ["prop_m8","prop_out","prop_dmnd"]:
 		pp.cleanup(os.path.join(outdir,f))
 	group_members = parse_inparanoid(outdir,new_strains)
 	extract_fastas(outdir,genes,group_members)
