@@ -7,6 +7,7 @@ import argparse
 import sys
 import subprocess
 import shutil
+import pyparanoid.pyparanoid as pp
 import multiprocessing as mp
 from Bio import SeqIO
 
@@ -14,9 +15,9 @@ def parse_args():
 	parser = argparse.ArgumentParser(description='''
 Using consensus sequences for each homolog group to propagate to new genomes.
 	''')
-	parser.add_argument('outdir', type=str,help='path to directory containing PyParanoid output')
 	parser.add_argument('genomedb', type=str,help='path to genome database')
-	parser.add_argument('new_strains',type=str,help='path to list of new strains')
+	parser.add_argument('new_strainlist',type=str,help='path to list of new strains')
+	parser.add_argument('outdir', type=str,help='path to directory containing PyParanoid output')
 	parser.add_argument('--cpus',type=int,help='number of cpus to use - defaults to # available')
 	return parser.parse_args()
 
@@ -137,22 +138,20 @@ def get_genes(strains):
 def run_inparanoid(strains,pypath):
 	print "Running inparanoid on", len(strains), "strains..."
 	count = len(strains)
-	for s in strains:
-		cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,s,"CONSENSUS",outdir+"/prop_")
-		proc = subprocess.Popen(cmds.split())
-		proc.wait()
-		count -= 1
-		if count == 0:
-			print "\tDone!"
-		elif count % 10 == 0:
-			print "\t"+str(count), "remaining..."
-		else:
-			pass
+	pool = mp.Pool(processes=cpus)
+	[pool.apply_async(IP_RUN, args=(s,)) for s in strains]
+	pool.close()
+	pool.join()
+	return
+
+def IP_RUN(s):
+	cmds = "perl {}/inparanoid2.pl {} {} {}".format(pypath,s,"CONSENSUS",outdir+"/prop_")
+	proc = subprocess.Popen(cmds.split())
+	proc.wait()
 	return
 
 def parse_inparanoid(new_strains):
 	group_members = {}
-	print new_strains
 	for s in new_strains:
 		for line in open(os.path.join(outdir,"prop_paranoid_output","{}.CONSENSUS.txt".format(s))):
 			if line.startswith("Orto"):
@@ -182,30 +181,32 @@ def extract_fastas(genes,group_members):
 
 def main():
 	args = parse_args()
+	global pypath
 	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
 	global outdir
 	outdir = os.path.abspath(args.outdir)
 	genomedb = os.path.abspath(args.genomedb)
-	new_strains = [line.rstrip() for line in open(os.path.abspath(args.new_strains),'r')]
+	new_strains = [line.rstrip() for line in open(os.path.abspath(args.new_strainlist),'r')]
 
+	global cpus
 	if args.cpus:
 		cpus = args.cpus
 	else:
 		cpus = mp.cpu_count()
 
-	setupdir()
+	pp.createdirs(outdir,["prop_faa","prop_dmnd","prop_m8","prop_out","prop_paranoid_output","prop_homolog_faa"])
 	check_strains(new_strains,genomedb)
 	make_diamond_databases(new_strains)
 	run_diamond(new_strains)
 	genes = get_genes(new_strains)
 	parse_diamond(genes)
 	run_inparanoid(new_strains,pypath)
-	for f in ["prop_m8","prop_out","prop_dmnd"]:
-		pp.cleanup(os.path.join(outdir,f))
-	group_members = parse_inparanoid(outdir,new_strains)
-	extract_fastas(outdir,genes,group_members)
+	group_members = parse_inparanoid(new_strains)
+	extract_fastas(genes,group_members)
 	pp.dump_matrices(outdir)
-	pp.createdirs(outdir,["prop_faa","prop_dmnd","prop_m8","prop_out","prop_paranoid_output","prop_homolog_faa"])
+	for f in ["prop_m8","prop_out","prop_dmnd","prop_paranoid_output"]:
+		pp.cleanup(os.path.join(outdir,f))
+
 
 if __name__ == '__main__':
 	main()
