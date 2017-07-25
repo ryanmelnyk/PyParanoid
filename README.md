@@ -1,10 +1,10 @@
 # PyParanoid
 
-**Ryan Melnyk, Haney Lab, UBC**  
+**Ryan Melnyk**  
+**[Haney Lab - University of British Columbia](https://haneylab.msl.ubc.ca/)**  
 **v0.1 - July 2017**
 
-***ryan.melnyk@msl.ubc.ca***
-
+***ryan.melnyk@msl.ubc.ca***  
 ***schmelnyk@gmail.com***
 
 PyParanoid is a pipeline for rapid identification of homologous gene families in a set of genomes - a central task of any comparative genomics analysis. The "gold standard" for identifying homologs is to use reciprocal best hits (RBHs) which depends on performing a all-vs-all sequence comparison, usually using BLAST, to determine homology.  However, these methods are computationally expensive, requiring **O(n<sup>2</sup>)** resources to identify RBHs. This is problematic, as the modern deluge of sequencing data means that comparative genomics analyses could be performed on datasets of thousands of strains.
