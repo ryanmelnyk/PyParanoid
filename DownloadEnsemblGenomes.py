@@ -18,10 +18,22 @@ some metadata in a text file.
 	''')
 	parser.add_argument('genomedb', type=str,help='directory to download genomes')
 	parser.add_argument('--names', type=str, help='comma-separated list of keywords to find in name of strain to download draft genomes. i.e. "pseudomonas,salmonella,syringae,K12". Only complete/exact matches will be downloaded and spelling counts!')
+	parser.add_argument('--taxids', type=str, help='comma-separated list of specific taxonomy ids to download')
 	parser.add_argument('--max', type=int, help="maximum number of genomes to download")
+	parser.add_argument('--complete',action="store_true",help="use this flag to only download complete genomes")
+
 	return parser.parse_args()
 
-def parse_json(outdir, assemblies, names, maxgen):
+def get_data(genomes,js):
+	if js["assembly_id"] not in genomes:
+		genomes[js["assembly_id"]] = {}
+		for feat in ['assembly_level','base_count','name', 'strain', 'dbname','species','taxonomy_id']:
+			genomes[js["assembly_id"]][feat] = js[feat]
+		genomes[js["assembly_id"]]['contigs'] = len(js["sequences"])
+		genomes[js["assembly_id"]]['ngenes'] = js["annotations"]["nProteinCoding"]
+	return genomes
+
+def parse_json(outdir, assemblies, names, maxgen, taxids, complete):
 	ens = ftplib.FTP('ftp.ensemblgenomes.org')
 	ens.login()
 	ens.cwd('pub/bacteria/current')
@@ -37,7 +49,7 @@ def parse_json(outdir, assemblies, names, maxgen):
 
 	items = ijson.items(urlopen("ftp://ftp.ensemblgenomes.org/{}/species_metadata_EnsemblBacteria.json".format(ens.pwd())),'item')
 	count = 0
-	finished_genomes = {}
+	genomes = {}
 
 	found = 0
 	for js in items:
@@ -51,16 +63,28 @@ def parse_json(outdir, assemblies, names, maxgen):
 		thisline.append(js["annotations"]["nProteinCoding"])
 
 		fields = js['species'].split("_")
-		for n in names:
-			if n in fields:
-				if js["species"] not in assemblies:
-					# print js["species"]
-					finished_genomes[js["assembly_id"]] = {}
-					for feat in ['assembly_level','base_count','name', 'strain', 'dbname','species','taxonomy_id']:
-						finished_genomes[js["assembly_id"]][feat] = js[feat]
-					finished_genomes[js["assembly_id"]]['contigs'] = len(js["sequences"])
-					finished_genomes[js["assembly_id"]]['ngenes'] = js["annotations"]["nProteinCoding"]
-					found += 1
+
+		if names:
+			for n in names:
+				if n in fields:
+					if js["species"] not in assemblies:
+						if complete:
+							if js["assembly_level"] == "chromosome":
+								genomes = get_data(genomes,js)
+								found += 1
+						else:
+							genomes = get_data(genomes,js)
+							found += 1
+		if taxids:
+			if js['taxonomy_id'] in taxids:
+				if js['species'] not in assemblies:
+					if complete:
+						if js["assembly_level"] == "chromosome":
+							genomes = get_data(genomes,js)
+							found += 1
+					else:
+						genomes = get_data(genomes,js)
+						found += 1
 
 		o.write("\t".join([str(x) for x in thisline])+"\n")
 
@@ -73,10 +97,10 @@ def parse_json(outdir, assemblies, names, maxgen):
 
 	print count, "total JSON records parsed."
 	print len(assemblies), "found in", os.path.basename(outdir)+"."
-	print len(finished_genomes), "remaining to download."
+	print len(genomes), "remaining to download."
 	o.close()
 	ens.close()
-	return finished_genomes,j
+	return genomes,j
 
 def setupdirs(outdir):
 	try:
@@ -155,25 +179,33 @@ def check_db(outdir):
 			if line.startswith("assembly_id"):
 				continue
 			else:
-				assemblies.append(line.rstrip().split("\t")[3])
+				assemblies.append(line.rstrip().split("\t")[2])
 	return assemblies
 
 def main():
 	args = parse_args()
-
 	outdir = os.path.abspath(args.genomedb)
+
+	if args.complete:
+		complete = True
+	else:
+		complete = False
+
 	if args.names == None:
-		names = []
+		names = False
 	else:
 		names = args.names.split(",")
-	for n in names:
-		print n
+
+	if args.taxids == None:
+		taxids = False
+	else:
+		taxids = args.taxids.split(",")
 
 	setupdirs(outdir)
 
 	assemblies = check_db(outdir)
 
-	finished_genomes, ENSEMBL_VERSION = parse_json(outdir,assemblies,names,args.max)
+	finished_genomes, ENSEMBL_VERSION = parse_json(outdir,assemblies,names,args.max,taxids,complete)
 	get_files(finished_genomes, outdir, ENSEMBL_VERSION)
 
 if __name__ == '__main__':

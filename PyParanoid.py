@@ -25,7 +25,7 @@ modes: setup, parse, cluster, extract
 	parser.add_argument('outdir',type=str,help='folder to store output')
 	parser.add_argument('--cpus',type=int,help='number of CPUs to use for tasks. Defaults to # of cores available.')
 	parser.add_argument('--mode',type=str,help='mode of PyParanoid to run')
-	parser.add_argument('--clean',action="store_true",help="don't clean up intermediate files")
+	parser.add_argument('--clean',action="store_true",help="clean up intermediate files")
 	parser.add_argument('--threshold',type=int,help="minimum size of groups")
 	parser.add_argument('--inflate', type=float,help="inflation parameter for mcl, default = 2")
 	parser.add_argument('--verbose',action="store_true",help="Print progress to STDOUT")
