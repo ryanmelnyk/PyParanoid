@@ -75,7 +75,7 @@ def parse_json(outdir, assemblies, names, maxgen, taxids, complete):
 						else:
 							genomes = get_data(genomes,js)
 							found += 1
-		if taxids:
+		elif taxids:
 			if js['taxonomy_id'] in taxids:
 				if js['species'] not in assemblies:
 					if complete:
@@ -85,6 +85,15 @@ def parse_json(outdir, assemblies, names, maxgen, taxids, complete):
 					else:
 						genomes = get_data(genomes,js)
 						found += 1
+		else:
+			if js['species'] not in assemblies:
+				if complete:
+					if js["assembly_level"] == "chromosome":
+						genomes = get_data(genomes,js)
+						found += 1
+				else:
+					genomes = get_data(genomes,js)
+					found += 1
 
 		o.write("\t".join([str(x) for x in thisline])+"\n")
 
