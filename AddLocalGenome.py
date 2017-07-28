@@ -22,7 +22,7 @@ def check_unique(species_id,outdir):
 		if line.startswith("assembly_id"):
 			continue
 		else:
-			strains.append(line.rstrip().split("\t")[3])
+			strains.append(line.rstrip().split("\t")[2])
 
 	if species_id not in strains:
 		print "Species ID is unique! Moving on..."
