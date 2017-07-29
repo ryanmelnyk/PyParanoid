@@ -108,6 +108,14 @@ python PyParanoid.py --clean --verbose pfl_genomeDB strainlist.txt pfl_pyp
 python DownloadEnsemblGenomes.py --names fluorescens pfl_genomeDB
 ```
 
+###### Go all out and download every Pfl sequence from RefSeq
+
+This script uses Kai Blin's [excellent NCBI download tool](https://github.com/kblin/ncbi-genome-download).
+
+```bash
+python ../PyParanoid/DownloadNcbiGenomes.py --name "Pseudomonas fluorescens" pfl_genomeDB
+```
+
 ###### Generate prop_strainlist.txt of strains
 ```bash
 ## Pull out all strains from the updated genomeDB
