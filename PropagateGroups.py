@@ -204,7 +204,7 @@ def main():
 	group_members = parse_inparanoid(new_strains)
 	extract_fastas(genes,group_members)
 	pp.dump_matrices(outdir)
-	for f in ["prop_m8","prop_out","prop_dmnd","prop_paranoid_output"]:
+	for f in ["prop_m8","prop_out","prop_dmnd","prop_paranoid_output","dmnd_tmp"]:
 		pp.cleanup(os.path.join(outdir,f))
 
 

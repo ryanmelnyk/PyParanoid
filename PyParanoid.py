@@ -479,6 +479,7 @@ def main():
 			pp.cleanup(os.path.join(outdir,"consensus_seqs"))
 			pp.cleanup(os.path.join(outdir,"m8"))
 			pp.cleanup(os.path.join(outdir,"paranoid_output"))
+			pp.cleanup(os.path.join(outdir,"dmnd_tmp"))
 		pp.dump_matrices(outdir)
 
 
