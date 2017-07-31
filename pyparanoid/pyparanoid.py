@@ -80,6 +80,7 @@ def cleanup(d):
 	print "Cleaning up", d
 	for f in os.listdir(d):
 		os.remove(os.path.join(d,f))
+	os.rmdir(d)
 	return
 
 def dump_matrices(outdir):
