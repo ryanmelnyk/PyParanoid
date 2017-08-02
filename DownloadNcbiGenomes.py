@@ -21,6 +21,7 @@ from RefSeq, as Genbank is more or less redundant with
 	parser.add_argument('--name',type=str,help="strain names for ncbi-genome-download")
 	parser.add_argument('--taxid',type=str,help="ncbi ID for ncbi-genome-download")
 	parser.add_argument('--cpus',type=int,help="number of cpus to use.")
+	parser.add_argument('--clean',action="store_true",help="use to remove NCBI files once copied to genomedb")
 	return parser.parse_args()
 
 def check_db(outdir):
@@ -44,9 +45,11 @@ def download_files(name,taxid,outdir,cpus):
 	files = ["fasta","protein-fasta","gff","assembly-stats"]
 	if name:
 		for f in files:
+			print "\tworking on {} files...".format(f)
 			ngd.download(group="bacteria",genus=name,file_format=f,section="refseq",output=outdir,parallel=cpus)
 	elif taxid:
 		for f in files:
+			print "\tworking on {} files...".format(f)
 			ngd.download(group="bacteria",taxid=taxid,file_format=f,section="refseq",output=outdir,parallel=cpus)
 	return
 
@@ -124,16 +127,12 @@ def main():
 	else:
 		cpus = None
 
-	if "refseq" in os.listdir(outdir):
-		if os.path.isdir(os.path.join(outdir,"refseq")):
-			print "Unparsed NCBI files in target directory {}....exiting...".format(outdir)
-			sys.exit()
-
 	assemblies,species_tags = check_db(outdir)
 
 	download_files(name,taxid,outdir,cpus)
 	copy_files(outdir,assemblies,species_tags)
-	shutil.rmtree(os.path.join(outdir,"refseq"))
+	if args.clean:
+		shutil.rmtree(os.path.join(outdir,"refseq"))
 
 
 
