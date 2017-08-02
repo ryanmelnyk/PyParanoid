@@ -56,7 +56,12 @@ def download_files(name,taxid,outdir,cpus):
 def copy_files(outdir,assemblies,species_tags):
 	metadata = open(os.path.join(outdir,"genome_metadata.txt"),'a')
 	for f in os.listdir(os.path.join(outdir,"refseq","bacteria")):
-		add = True
+		if len(os.listdir(os.path.join(outdir,"refseq","bacteria",f))) != 5:
+			print "Files may be missing. Skipping..."
+			add = False
+			continue
+		else:
+			add = True
 		assembly_id, orgname, tax_id = "","",""
 		for g in os.listdir(os.path.join(outdir,"refseq","bacteria",f)):
 			if g.endswith(".gz"):
