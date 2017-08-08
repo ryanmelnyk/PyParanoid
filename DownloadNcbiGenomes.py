@@ -14,14 +14,13 @@ import ncbi_genome_download as ngd
 def parse_args():
 	parser = argparse.ArgumentParser(description='''
 Using Kai Blin's ncbi-genome-download to add genomes to a local genomedb.  Downloads
-from RefSeq, as Genbank is more or less redundant with
+from RefSeq, as Genbank is more or less redundant with EnsemblGenomes.
 	''')
 
 	parser.add_argument('outdir', type=str,help='directory to download genomes')
-	parser.add_argument('--name',type=str,help="strain names for ncbi-genome-download")
+	parser.add_argument('--name',type=str,help="strain names for ncbi-genome-download - use quotes")
 	parser.add_argument('--taxid',type=str,help="ncbi ID for ncbi-genome-download")
 	parser.add_argument('--cpus',type=int,help="number of cpus to use.")
-	parser.add_argument('--clean',action="store_true",help="use to remove NCBI files once copied to genomedb")
 	return parser.parse_args()
 
 def check_db(outdir):
@@ -55,6 +54,10 @@ def download_files(name,taxid,outdir,cpus):
 
 def copy_files(outdir,assemblies,species_tags):
 	metadata = open(os.path.join(outdir,"genome_metadata.txt"),'a')
+	if not os.path.exists(os.path.join(outdir,"refseq")):
+		print "No files downloaded!"
+		print "Check genus/species name or taxid"
+		sys.exit()
 	for f in os.listdir(os.path.join(outdir,"refseq","bacteria")):
 		if len(os.listdir(os.path.join(outdir,"refseq","bacteria",f))) != 5:
 			print "Files may be missing. Skipping..."
@@ -133,11 +136,13 @@ def main():
 		cpus = None
 
 	assemblies,species_tags = check_db(outdir)
-
+	if os.path.exists(os.path.join(outdir,"refseq")):
+		print "Incomplete NCBI download in",outdir,"detected."
+		print "Clean up NCBI files before proceeding."
+		sys.exit()
 	download_files(name,taxid,outdir,cpus)
 	copy_files(outdir,assemblies,species_tags)
-	if args.clean:
-		shutil.rmtree(os.path.join(outdir,"refseq"))
+	shutil.rmtree(os.path.join(outdir,"refseq"))
 
 
 
