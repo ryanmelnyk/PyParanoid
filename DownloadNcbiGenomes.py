@@ -74,7 +74,7 @@ def copy_files(outdir,assemblies,species_tags):
 			if g.endswith("_assembly_stats.txt"):
 				for line in open(os.path.join(outdir,"refseq","bacteria",f,g)):
 					if line.startswith("# Organism name:"):
-						orgname = line.split(":")[1].split("(")[0].strip().replace(" ","_").replace("-","_").lower()
+						orgname = line.split(":")[1].split("(")[0].strip().replace(" ","_").replace("-","_").replace("/","_").replace(".","_").lower()
 						print "Processing {}...".format(orgname)
 					if line.startswith("# GenBank assembly accession:"):
 						assembly_id = line.split(":")[1].strip()
