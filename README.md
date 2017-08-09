@@ -7,6 +7,8 @@
 ***ryan.melnyk@msl.ubc.ca***  
 ***schmelnyk@gmail.com***
 
+![PyParanoid pipeline](src/pipeline.png "PyParanoid pipeline")
+
 PyParanoid is a pipeline for rapid identification of homologous gene families in a set of genomes - a central task of any comparative genomics analysis. The "gold standard" for identifying homologs is to use reciprocal best hits (RBHs) which depends on performing a all-vs-all sequence comparison, usually using BLAST, to determine homology.  However, these methods are computationally expensive, requiring **O(n<sup>2</sup>)** resources to identify RBHs. This is problematic, as the modern deluge of sequencing data means that comparative genomics analyses could be performed on datasets of thousands of strains.
 
 To circumvent this obstacle, I developed a two-step machine learning-inspired pipeline which develops gene models for the pangenome of a training dataset and then propagates those models to additional strains.  The first step identifies homologs using conventional **O(n<sup>2</sup>)** RBH-based methods but relies on the recent sequence alignment program [DIAMOND](http://github.com/bbuchfink/diamond) to speed up this process by an order of magnitude over BLAST-based methods.  The second step uses the gene models generated in the first step to propagate annotations to additional strains using **O(n)** resources. I named this pipeline PyParanoid as it is written in Python and relies on the pairwise homology algorithm [InParanoid](http://inparanoid.sbc.su.se/cgi-bin/faq.cgi). Using this pipeline, it is possible to generate homology-based annotations for thousands of bacterial and archaeal genomes in hours on a local machine.
@@ -19,14 +21,14 @@ PyParanoid is primarily written in python.  To manage python installations and e
 
 PyParanoid also depends on a modified version of the InParanoid script ([Sonnhammer et al., 2015](http://inparanoid.sbc.su.se/cgi-bin/faq.cgi)) and thus also requires perl to be installed.
 
-#### Python modules using Miniconda :snake:
+#### Python modules using Miniconda :snake::snake::snake:
 ```
 conda install biopython
 conda install pandas
 conda install seaborn
 ```
 
-#### Using Homebrew :beers:
+#### Using Homebrew :beer::beers::beers::beer:
 
 OSX users can install these dependencies easily using [Homebrew](https://brew.sh/) and running the following commands.
 
@@ -83,7 +85,9 @@ Of course, this is a tradeoff between computational time and detecting novel gen
 
  I am planning to address this issue in future development by adding an option to add new gene families as new strains get added to an existing database.
 
-## Example application
+## Example applications
+
+#### Build a database for a single bacterial species
 
 Here is an example to carry out a basic analysis using everybody's favorite bacterium *Pseudomonas fluorescens*.  This is a full walkthrough of PyParanoid's capabilities on a modest-sized dataset - it should take roughly 1-2 hrs on a 4-8 core system.
 
@@ -139,4 +143,14 @@ quit()
 ###### Propagate groups to new draft genomes
 ```bash
 python PropagateGroups.py pfl_genomeDB prop_strainlist.txt pfl_pyp
+```
+
+#### Build a species tree
+
+###### Pull out orthologs
+
+This command pulls out orthologs that are found as a single copy in over 90% of all strains.  As this dataset includes many
+
+```bash
+python IdentifyOrthologs.py --threshold 0.9 pfl_pyp
 ```
