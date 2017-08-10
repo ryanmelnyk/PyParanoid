@@ -108,9 +108,9 @@ def copy_files(outdir,assemblies,species_tags):
 					o.close()
 				if g.endswith(".gff"):
 					shutil.copy(os.path.join(outdir,"refseq","bacteria",f,g),os.path.join(outdir,"gff3",orgname+".gff3"))
-
 			meta_vals = [assembly_id,total_length,orgname,tax_id,contig_count,gene_count,"NCBI-RefSeq",datetime.now(),datetime.now()]
 			metadata.write("\t".join([str(x) for x in meta_vals])+"\n")
+			species_tags.append(orgname)
 	metadata.close()
 	return
 
