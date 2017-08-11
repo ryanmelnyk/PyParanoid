@@ -13,34 +13,48 @@ Takes a complete PyParanoid directory (base and propagated) and generate list of
 argument relaxes the cutoff and includes homologs that occur exactly once in some fraction of all strains (e.g. 90%).
 	''')
 	parser.add_argument('outdir', type=str,help='path to PyParanoid folder')
+	parser.add_argument('prefix',type=str,help='prefix for output files')
 	parser.add_argument('--threshold',type=float,help='proportion of strains to be considered an ortholog')
 	parser.add_argument('--cpus',type=int,help='number of CPUs to use for tasks. Defaults to # of cores available.')
 	parser.add_argument('--clean',action="store_true",help="clean up intermediate files")
+	parser.add_argument('--strains',type=str,help='specify if a subset of strains are to be identified')
 	return parser.parse_args()
 
 
-def parse_matrix():
+def parse_matrix(strains):
 	orthos = []
 	print "Parsing matrix to identify orthologs..."
+	header = open(os.path.join(outdir,"homolog_matrix.txt")).readline().rstrip().split("\t")
+	try:
+		indices = [header.index(s) for s in strains]
+	except:
+		print s,"not found in matrix. Check strainlist."
 	for line in open(os.path.join(outdir,"homolog_matrix.txt")):
 		vals = line.rstrip().split("\t")
 		if vals[0] == "":
 			continue
 		else:
-			if set(vals[1:]) == set(["1"]):
+			strain_vals = [vals[i] for i in indices]
+			if set(strain_vals[1:]) == set(["1"]):
 				orthos.append(vals[0])
 	print len(orthos), "orthologs found."
 	return orthos
 
-def parse_threshold_matrix(t):
+def parse_threshold_matrix(t,strains):
 	orthos = []
 	print "Parsing matrix to identify orthologs..."
+	header = open(os.path.join(outdir,"homolog_matrix.txt")).readline().rstrip().split("\t")
+	try:
+		indices = [header.index(s) for s in strains]
+	except:
+		print s,"not found in matrix. Check strainlist."
 	for line in open(os.path.join(outdir,"homolog_matrix.txt")):
 		vals = line.rstrip().split("\t")
 		if vals[0] == "":
 			continue
 		else:
-			if float(vals.count("1"))/float(len(vals)-1) > t:
+			strain_vals = [vals[i] for i in indices]
+			if float(strain_vals.count("1"))/float(len(strain_vals)) > t:
 				orthos.append(vals[0])
 	print len(orthos), "orthologs found."
 	return orthos
@@ -60,17 +74,19 @@ def concat(o,strains):
 	try:
 		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_faa",o+".faa"),'r'),'fasta'):
 			strain = str(seq.id).split("|")[0]
-			if strain not in selected:
-				out.write(">{}\n{}\n".format(strain,str(seq.seq)))
-				selected.append(strain)
+			if strain in strains:
+				if strain not in selected:
+					out.write(">{}\n{}\n".format(strain,str(seq.seq)))
+					selected.append(strain)
 	except IOError:
 		pass
 	try:
 		for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",o+".faa"),'r'),'fasta'):
 			strain = str(seq.id).split("|")[0]
-			if strain not in selected:
-				out.write(">{}\n{}\n".format(strain,str(seq.seq)))
-				selected.append(strain)
+			if strain in strains:
+				if strain not in selected:
+					out.write(">{}\n{}\n".format(strain,str(seq.seq)))
+					selected.append(strain)
 	except IOError:
 		pass
 	out.close()
@@ -113,7 +129,7 @@ def extract_hmms(orthos):
 	FNULL.close()
 	return
 
-def create_master_alignment(orthos,strains):
+def create_master_alignment(orthos,strains,prefix):
 
 	align_data = {k : [] for k in strains}
 	count = len(orthos)
@@ -157,12 +173,14 @@ def create_master_alignment(orthos,strains):
 			pass
 	print "Done!"
 	print "Writing alignment..."
-	o = open(os.path.join(outdir,"master_alignment.faa"),'w')
+	out = open(prefix+".faa",'w')
 	for a in align_data:
-		o.write(">{}\n{}\n".format(a,"".join(align_data[a]).upper().replace(".","-")))
-	o.close()
-
-	return align_data
+		out.write(">{}\n{}\n".format(a,"".join(align_data[a]).upper().replace(".","-")))
+	out.close()
+	out = open(prefix+".orthos.txt",'w')
+	[out.write("{}\n".format(orth)) for orth in orthos]
+	out.close()
+	return
 
 def get_strains():
 	strains = [line.rstrip() for line in open(os.path.join(outdir,"strainlist.txt"))]
@@ -178,14 +196,19 @@ def index_hmms():
 
 def main():
 	args = parse_args()
+	prefix = os.path.abspath(args.prefix)
 	global outdir
 	outdir = os.path.abspath(args.outdir)
 
 	pp.createdirs(outdir,["ortho_align","concat"])
-	if args.threshold:
-		orthos = parse_threshold_matrix(args.threshold)
+	if args.strains:
+		strains = [line.rstrip() for line in open(os.path.abspath(args.strains),'r')]
 	else:
-		orthos = parse_matrix()
+		strains = get_strains()
+	if args.threshold:
+		orthos = parse_threshold_matrix(args.threshold,strains)
+	else:
+		orthos = parse_matrix(strains)
 
 	if args.cpus:
 		cpus = args.cpus
@@ -194,10 +217,10 @@ def main():
 
 	index_hmms()
 	extract_hmms(orthos)
-	strains = get_strains()
+
 	concat_orthos(orthos,strains,cpus)
 	align_orthos(orthos,cpus)
-	create_master_alignment(orthos,strains)
+	create_master_alignment(orthos,strains,prefix)
 	if args.clean:
 		pp.cleanup(os.path.join(outdir,"ortho_align"))
 		pp.cleanup(os.path.join(outdir,"concat"))

@@ -51,7 +51,7 @@ def plot_group_sizes(x,y,a):
 	plt.ylim([0,y[1]*1.1])
 	ax = sns.regplot(x=x,y=y,fit_reg=False)
 	plt.savefig(os.path.join(outdir,"QCstats",'Group_Sizes.png'),dpi=300)
-	plt.close()
+	plt.clear()
 	return
 
 def sample_combinations(a):
@@ -73,7 +73,7 @@ def plot_rarefaction(x,y):
 	plt.ylim([0,max(y)*1.1])
 	ax = sns.regplot(x=x,y=y,fit_reg=False)
 	plt.savefig(os.path.join(outdir,"QCstats","Rarefaction.png"),dpi=300)
-	plt.close()
+	plt.clear()
 	return
 
 def main():
