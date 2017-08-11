@@ -18,6 +18,7 @@ argument relaxes the cutoff and includes homologs that occur exactly once in som
 	parser.add_argument('--cpus',type=int,help='number of CPUs to use for tasks. Defaults to # of cores available.')
 	parser.add_argument('--clean',action="store_true",help="clean up intermediate files")
 	parser.add_argument('--strains',type=str,help='specify if a subset of strains are to be identified')
+	parser.add_argument('--orthos',type=str,help="specify to use previously calculated groups")
 	return parser.parse_args()
 
 
@@ -205,10 +206,14 @@ def main():
 		strains = [line.rstrip() for line in open(os.path.abspath(args.strains),'r')]
 	else:
 		strains = get_strains()
-	if args.threshold:
-		orthos = parse_threshold_matrix(args.threshold,strains)
+
+	if args.orthos:
+		orthos = [line.rstrip() for line in open(os.path.abspath(args.orthos),'r')]
 	else:
-		orthos = parse_matrix(strains)
+		if args.threshold:
+			orthos = parse_threshold_matrix(args.threshold,strains)
+		else:
+			orthos = parse_matrix(strains)
 
 	if args.cpus:
 		cpus = args.cpus
