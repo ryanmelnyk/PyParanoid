@@ -121,7 +121,7 @@ def extract_hmms(orthos):
 			cmds = "hmmfetch -o {} {} {}".format(os.path.join(outdir,"hmms",o+".hmm"),os.path.join(outdir,"all_groups.hmm"),o)
 			proc = subprocess.Popen(cmds.split(),stdout=FNULL,stderr=FNULL)
 			proc.wait()
-		if count % 10 == 0:
+		if count % 100 == 0:
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
@@ -168,7 +168,7 @@ def create_master_alignment(orthos,strains,prefix):
 				print align_data[s]
 				print o
 				sys.exit()
-		if count % 10 == 0:
+		if count % 100 == 0:
 			print "\t"+str(count), "remaining..."
 		else:
 			pass
@@ -201,7 +201,7 @@ def main():
 	global outdir
 	outdir = os.path.abspath(args.outdir)
 
-	pp.createdirs(outdir,["ortho_align","concat"])
+	pp.createdirs(outdir,["ortho_align","concat","hmms"])
 	if args.strains:
 		strains = [line.rstrip() for line in open(os.path.abspath(args.strains),'r')]
 	else:

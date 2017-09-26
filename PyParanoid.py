@@ -403,7 +403,7 @@ def main():
 	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 	if args.mode:
-		if args.mode not in ["setup","parse","extract","cluster"]:
+		if args.mode not in ["multi_setup","parse","extract","cluster"]:
 			print "Unknown mode!!! Exiting..."
 			sys.exit()
 

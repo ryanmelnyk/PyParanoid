@@ -91,6 +91,8 @@ Of course, this is a tradeoff between computational time and detecting novel gen
 
 Here is an example to carry out a basic analysis using our favorite plant-associated bacterium *Pseudomonas fluorescens*.  This is a full walkthrough of PyParanoid's capabilities on a modest-sized dataset - it should take roughly 1-2 hrs on a 4-8 core system.
 
+Note that in this example, only genomes named *Pseudomonas fluorescens* will be downloaded.  Due to the messiness inherent in bacterial species nomenclature (especially *Pseudomonas spp.*), this will likely be a polyphyletic group.
+
 ###### Set up a genomic database and download complete Pfl genomes
 ```bash
 python DownloadEnsemblGenomes.py --complete --names fluorescens pfl_genomeDB
@@ -145,14 +147,14 @@ quit()
 python PropagateGroups.py pfl_genomeDB prop_strainlist.txt pfl_pyp
 ```
 
-#### Build a species tree using pre-calculated HMMs
+#### Build a species tree
 
 ###### Pull out orthologs
 
-This command pulls out orthologs that are found as a single copy in over 90% of all strains.  As this dataset includes many
+This command pulls out orthologs from the "pfl_pyp" database generated in the previous section. As this dataset includes many draft genomes with missing or fragmented genes, specifying a threshold is a good idea. ```--threshold 0.9``` will find genes present as a single copy in over 90% of all strains. If no threshold is specified, orthologs will be "strict" (i.e. present as a single copy in every strain).
 
 ```bash
-python IdentifyOrthologs.py --threshold 0.9 pfl_pyp
+python IdentifyOrthologs.py --threshold 0.9 pfl_pyp pfl_ortho
 ```
 
 ## Citing PyParanoid
