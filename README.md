@@ -2,7 +2,7 @@
 
 **Ryan Melnyk**  
 **[Haney Lab - University of British Columbia](https://haneylab.msl.ubc.ca/)**  
-**v0.1 - July 2017**
+**v1.0 - release ???**
 
 ***ryan.melnyk@msl.ubc.ca***  
 ***schmelnyk@gmail.com***
@@ -11,7 +11,7 @@
 
 PyParanoid is a pipeline for rapid identification of homologous gene families in a set of genomes - a central task of any comparative genomics analysis. The "gold standard" for identifying homologs is to use reciprocal best hits (RBHs) which depends on performing a all-vs-all sequence comparison, usually using BLAST, to determine homology.  However, these methods are computationally expensive, requiring **O(n<sup>2</sup>)** resources to identify RBHs. This is problematic, as the modern deluge of sequencing data means that comparative genomics analyses could be performed on datasets of thousands of strains.
 
-To circumvent this obstacle, I developed a two-step machine learning-inspired pipeline which develops gene models for the pangenome of a training dataset and then propagates those models to additional strains.  The first step identifies homologs using conventional **O(n<sup>2</sup>)** RBH-based methods but relies on the recent sequence alignment program [DIAMOND](http://github.com/bbuchfink/diamond) to speed up this process by an order of magnitude over BLAST-based methods.  The second step uses the gene models generated in the first step to propagate annotations to additional strains using **O(n)** resources. I named this pipeline PyParanoid as it is written in Python and relies on the pairwise homology algorithm [InParanoid](http://inparanoid.sbc.su.se/cgi-bin/faq.cgi). Using this pipeline, it is possible to generate homology-based annotations for thousands of bacterial and archaeal genomes in hours on a local machine.
+To circumvent this obstacle, I developed a two-step machine learning-inspired pipeline which develops gene models for the pangenome of a training dataset and then propagates those models to additional strains (the "test dataset").  The first step identifies homologs using conventional **O(n<sup>2</sup>)** RBH-based methods but relies on the recent sequence alignment program [DIAMOND](http://github.com/bbuchfink/diamond) to speed up this process by an order of magnitude over BLAST-based methods.  The second step uses the gene models generated in the first step to propagate annotations to additional strains using **O(n)** resources. I named this pipeline PyParanoid as it is written in Python and relies on the pairwise homology algorithm [InParanoid](http://inparanoid.sbc.su.se/cgi-bin/faq.cgi). Using this pipeline, it is possible to generate homology-based annotations for thousands of bacterial and archaeal genomes in hours on a local machine.
 
 I have also included some scripts that facilitate upstream genome database management as well as downstream comparative genomics workflows using the PyParanoid database, such as scripts for synteny analysis and homology-based visualizations of genomes.
 
@@ -81,15 +81,15 @@ Generally the way I use PyParanoid is to build a pangenome using only high-quali
 
 As an example, I built gene models for ~200 Pseudomonas strains in late 2016 and then annotated ~900 more genomes using those models.  To add additional genomes now, I simply propagate the gene families to the new genomes rather than redoing the entire workflow.
 
-Of course, this is a tradeoff between computational time and detecting novel gene families.  Obviously, it depends on the phylogenetic distribution or the training dataset vs. the test dataset.  If you used a training set of hundreds of genomes that are broadly distributed across a genus or family, you will have better luck propagating those gene families than if you use only a few dozen strains from a single species for step 1 (```PyParanoid.py```) and then use those gene families on genomes from a different genus or family in step 2 (```PropagateGroups.py```).
+Of course, this is a tradeoff between computational time and detecting novel gene families.  Obviously, it depends on the phylogenetic distribution or the training dataset vs. the test dataset.  If you used a training set of hundreds of genomes that are broadly distributed across a genus or family, you will have better luck propagating those gene families than if you use only a few dozen strains from a single species as the training dataset and then use those gene families on a test dataset containg genomes from a different genus or family. A good example of how to be confident in the phylogenetic scope of the training and test datasets can be found in the PyParanoid manuscript.
 
  I am planning to address this issue in future development by adding an option to add new gene families as new strains get added to an existing database.
 
 ## Example applications
 
-#### Build a database for a single bacterial species
+#### Build a Pseudomonas fluorescens database :seedling::ear_of_rice::herb:
 
-Here is an example to carry out a basic analysis using everybody's favorite bacterium *Pseudomonas fluorescens*.  This is a full walkthrough of PyParanoid's capabilities on a modest-sized dataset - it should take roughly 1-2 hrs on a 4-8 core system.
+Here is an example to carry out a basic analysis using our favorite plant-associated bacterium *Pseudomonas fluorescens*.  This is a full walkthrough of PyParanoid's capabilities on a modest-sized dataset - it should take roughly 1-2 hrs on a 4-8 core system.
 
 ###### Set up a genomic database and download complete Pfl genomes
 ```bash
@@ -145,7 +145,7 @@ quit()
 python PropagateGroups.py pfl_genomeDB prop_strainlist.txt pfl_pyp
 ```
 
-#### Build a species tree
+#### Build a species tree using pre-calculated HMMs
 
 ###### Pull out orthologs
 
@@ -154,3 +154,7 @@ This command pulls out orthologs that are found as a single copy in over 90% of 
 ```bash
 python IdentifyOrthologs.py --threshold 0.9 pfl_pyp
 ```
+
+## Citing PyParanoid
+
+if you're reading this PyParanoid is still in development so just cite this github page
