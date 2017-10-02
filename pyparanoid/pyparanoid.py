@@ -71,7 +71,7 @@ from Bio import SeqIO
 def createdirs(outdir, folders):
 	for f in folders:
 		try:
-			os.makedirs(os.path.join(os.path.join(outdir,f)))
+			os.makedirs(os.path.abspath(os.path.join(outdir,f)))
 		except OSError:
 			print "Subfolder exists:", os.path.join(outdir,f)
 	return
