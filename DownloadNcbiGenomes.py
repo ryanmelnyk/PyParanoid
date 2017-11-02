@@ -18,8 +18,8 @@ from RefSeq, as Genbank is more or less redundant with EnsemblGenomes.
 	''')
 
 	parser.add_argument('outdir', type=str,help='directory to download genomes')
-	parser.add_argument('--name',type=str,help="strain names for ncbi-genome-download - use quotes")
-	parser.add_argument('--taxid',type=str,help="ncbi ID for ncbi-genome-download")
+	parser.add_argument('--names',type=str,help="strain names for ncbi-genome-download - use quotes")
+	parser.add_argument('--taxids',type=str,help="ncbi ID for ncbi-genome-download")
 	parser.add_argument('--cpus',type=int,help="number of cpus to use.")
 	return parser.parse_args()
 

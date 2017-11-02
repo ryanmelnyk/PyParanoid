@@ -65,11 +65,11 @@ muscle can be found [here](http://www.drive5.com/muscle/)
 
 #### Input
 
-At minimum, you can run PyParanoid using just a folder of FASTA-formatted amino acid files.  These should be named with a ```.faa``` file extension and stored in a folder named ```pep```.  The "genomedb" argument for ```PyParanoid.py``` and all other scripts should point to the relative location of the folder containing ```pep```.
+At minimum, you can run PyParanoid using just a folder of FASTA-formatted amino acid files of indiscriminate provenance.  These should be named with a ```.faa``` file extension and stored in a folder named ```pep```.  The "genomedb" argument for ```PyParanoid.py``` and all other scripts should point to the relative location of the folder containing ```pep```.
 
 Within the ```pep``` folder, all ```.faa``` files should have different prefixes reflecting the strain names. Underscores, letters and numbers are permitted.  Additionally, within each strain's .faa file sequence IDs should be unique.
 
-Alternatively, you can use ```DownloadEnsemblGenomes.py``` to download genomic data for bacteria and archaea from Ensembl into a single local database. You can download specific genera or species using the ```--names``` argument or specific taxonomy IDs using the ```--taxids``` option.  Check out [Ensembl Bacteria](http://bacteria.ensembl.org/species.html) for more info on what is available.
+Alternatively, you can use ```DownloadEnsemblGenomes.py``` or ```DownloadNcbiGenomes.py``` to download genomic data for bacteria and archaea from Ensembl into a single local database. You can download specific genera or species using the ```--names``` argument or specific taxonomy IDs using the ```--taxids``` option.
 
 Once this local genomic database is built, you can also add local, [Prokka](https://github.com/tseemann/prokka)-annotated genomes using ```AddLocalGenome.py```.  Using these options will enable your genomic input data to be compatible with downstream scripts that rely on accessing Genbank data for analysis or visualization.
 
@@ -125,7 +125,7 @@ This command pulls out orthologs from the "pfl_pyp" database generated in the pr
 python IdentifyOrthologs.py --threshold 0.9 pfl_pyp pfl_ortho
 ```
 
-FINISH THIS SECTION
+This produces a file ```master_alignment.faa``` which can be used to generate a species tree using your method of choice.
 
 ## Analysis examples
 
