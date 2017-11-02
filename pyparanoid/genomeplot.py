@@ -92,7 +92,7 @@ def make_tracks(seq, span, coords, g, GD, count, locus_tags, labels):
 						border=colors.black)
 				try:
 					feature_set.add_feature(feat, sigil="BIGARROW", arrowshaft_height=1, arrowhead_length=.4,color="#D3D3D3", \
-						label=True,name=feat.qualifiers[FIELD][0],label_strand=-1,label_size = 8,label_position="middle", label_angle=90, \
+						label=labels,name=feat.qualifiers[FIELD][0],label_strand=-1,label_size = 8,label_position="middle", label_angle=90, \
 						border=colors.black)
 					locus_tags[g[0].split(".")[0]].append(feat.qualifiers[FIELD][0].split(".")[0])
 				except KeyError:

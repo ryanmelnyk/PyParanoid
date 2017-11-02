@@ -13,11 +13,12 @@ def parse_args():
 Populate the taxonomy table with taxonomy information extracted from NCBI Taxonomy.
 	''')
 	parser.add_argument('outdir', type=str,help='directory where genomes have been downloaded.')
+	parser.add_argument('email',type=str,help="email for accessing Entrez-NCBI")
 	parser.add_argument('--max',type=int,help='maximum number of taxonomy queries to perform before exiting')
 	return parser.parse_args()
 
-def fetch_tax(taxdata,outdir):
-	Entrez.email = "schmelnyk@gmail.com"
+def fetch_tax(taxdata,outdir,email):
+	Entrez.email = email
 	if os.path.exists(os.path.join(outdir,"tax_info.txt")):
 		o = open(os.path.join(outdir,"tax_info.txt"),'a')
 	else:
@@ -85,7 +86,7 @@ def main():
 		max_queries = None
 
 	taxdata = get_genomedb_data(outdir,max_queries)
-	fetch_tax(taxdata,outdir)
+	fetch_tax(taxdata,outdir,email)
 
 if __name__ == '__main__':
 	main()

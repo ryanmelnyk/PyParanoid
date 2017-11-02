@@ -23,6 +23,7 @@ PyParanoid also depends on a modified version of the InParanoid script ([Sonnham
 
 #### Python modules using Miniconda :snake::snake::snake:
 ```
+conda install numpy
 conda install biopython
 conda install pandas
 conda install seaborn
