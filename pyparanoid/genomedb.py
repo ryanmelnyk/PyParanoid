@@ -4,7 +4,10 @@ import ftplib
 import ijson
 import subprocess
 import datetime
+import shutil
+import sys
 from urllib import urlopen
+from Bio import SeqIO
 
 def check_db(outdir):
 	assemblies = []
@@ -115,7 +118,7 @@ def download_Ensembl_files(outdir, names=False, maxgen=100, taxids=False, comple
 	for g in genomes:
 		genomes[g]["version"] = j
 	Ensembl_ftp(genomes,outdir)
-	return genomes
+	return
 
 
 def get_data(genomes,js):
@@ -174,4 +177,51 @@ def download_and_unzip(ftp,f,outfile):
 	cmds = ["gunzip",outfile]
 	proc = subprocess.Popen(cmds)
 	proc.wait()
+	return
+
+
+def check_unique(species_id,outdir):
+	strains = []
+	for line in open(os.path.join(outdir,"genome_metadata.txt"),'r'):
+		if line.startswith("assembly_id"):
+			continue
+		else:
+			strains.append(line.rstrip().split("\t")[2])
+
+	if species_id not in strains:
+		print "Species ID is unique! Moving on..."
+		return True
+	else:
+		print "Species ID is not unique. Select a new ID."
+		return False
+
+def add_Prokka_genome(outdir,prokka,species_id,tax_id="2"):
+	if check_unique(species_id,outdir):
+		stats = {}
+		print "Copying files..."
+		for f in os.listdir(prokka):
+			if f.endswith(".faa"):
+				stats['ngenes'] = 0
+				for seq in SeqIO.parse(open(os.path.join(prokka,f),'r'),'fasta'):
+					stats['ngenes'] += 1
+				shutil.copy(os.path.join(prokka,f),os.path.join(outdir,"pep","{}.pep.fa".format(species_id)))
+			elif f.endswith(".fna"):
+				basecount = 0
+				contigcount = 0
+				for seq in SeqIO.parse(open(os.path.join(prokka,f),'r'),'fasta'):
+					basecount += len(str(seq.seq))
+					contigcount += 1
+				stats['basecount'] = basecount
+				stats['contigcount'] = contigcount
+				shutil.copy(os.path.join(prokka,f),os.path.join(outdir,"dna","{}.dna.fa".format(species_id)))
+			elif f.endswith(".gbk"):
+				shutil.copy(os.path.join(prokka,f),os.path.join(outdir,"gbk","{}.gbk".format(species_id)))
+			else:
+				pass
+		o = open(os.path.join(outdir,"genome_metadata.txt"),'a')
+		vals = [species_id+"_v1",stats['basecount'],species_id,tax_id,stats['contigcount'],stats['ngenes'],"prokka_in_house", datetime.datetime.now(),datetime.datetime.now()]
+		o.write("\t".join([str(v) for v in vals])+"\n")
+		o.close()
+	else:
+		pass
 	return
