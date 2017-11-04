@@ -116,8 +116,6 @@ python ../PyParanoid/DownloadNcbiGenomes.py --name "Pseudomonas fluorescens" pfl
 python PropagateGroups.py pfl_genomeDB prop_strainlist.txt pfl_pyp
 ```
 
-## Build a species tree
-
 ###### Pull out orthologs
 
 This command pulls out orthologs from the "pfl_pyp" database generated in the previous section. As this dataset includes many draft genomes with missing or fragmented genes, specifying a threshold is a good idea. ```--threshold 0.9``` will find genes present as a single copy in over 90% of all strains. If no threshold is specified, orthologs will be "strict" (i.e. present as a single copy in every strain).
