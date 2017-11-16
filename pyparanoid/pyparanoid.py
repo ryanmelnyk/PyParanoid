@@ -5,6 +5,7 @@
 
 import os
 from Bio import SeqIO
+import numpy as np
 
 ### Attempting to re-implement InParanoid algorithm
 
@@ -119,3 +120,48 @@ def dump_matrices(outdir):
 		o_loc.write("{}\t{}\n".format(f.split(".")[0],"\t".join(thisline)))
 		o_hom.write("{}\t{}\n".format(f.split(".")[0],"\t".join(counts)))
 	return
+
+def parse_matrix(outdir):
+	strains = [line.rstrip() for line in open(os.path.join(outdir,"strainlist.txt"),'r')]
+	matrixfile = open(os.path.join(outdir,"homolog_matrix.txt"),'r')
+	header = matrixfile.readline().rstrip().split("\t")
+	indices = [header.index(s) for s in strains]
+
+	lines = []
+	for line in matrixfile:
+		vals = line.rstrip().split("\t")
+		# convert input data into boolean presence/absence
+		lines.append([int(vals[i]) for i in indices])
+	a = np.stack(lines)
+	return a
+
+def get_groupsizes(relpath):
+	outdir = os.path.abspath(relpath)
+	a = parse_matrix(outdir)
+	l = a.shape[0]
+	x,y = [],[]
+	poss_orthos = 0
+	for i in range(0,l):
+		y.append(np.sum(a[i,:]))
+		x.append(i)
+		singles = np.count_nonzero(a[i,:] == 1)
+		if singles > a.shape[1]*0.95:
+			poss_orthos += 1
+	print l, "total groups in", os.path.basename(outdir)
+	print poss_orthos, "groups are present in a single copy in >95% of strains."
+	return (x,y,poss_orthos)
+
+def get_rarefaction(relpath):
+	outdir = os.path.abspath(relpath)
+	a = parse_matrix(outdir)
+	l = a.shape[1]
+	x = []
+	y = []
+	for i in range(1,l):
+		if i % 100 == 0:
+			print "on genome number {} of {}".format(i,l)
+		for k in range(0,3):
+			 x.append(i)
+			 y.append(np.unique(np.nonzero(a[:,np.random.choice(l,size=i,replace=False)])[0]).shape[0])
+	print "Done!"
+	return (x,y)
