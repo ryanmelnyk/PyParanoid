@@ -1,5 +1,6 @@
 from Bio import SeqIO
 from Bio.Graphics import GenomeDiagram
+from Bio import GenBank
 from Bio.SeqFeature import FeatureLocation
 import seaborn as sns
 import random
@@ -7,6 +8,8 @@ import argparse, os, sys, math
 from reportlab.lib.units import inch
 from ete3 import Tree, TreeStyle, NodeStyle
 import matplotlib.colors as colors
+from reportlab.lib import colors as rcolors
+import numpy as np
 
 def parse_genbank(g):
 	if g[2] == "ensembl" or g[2] == "refseq":
@@ -200,3 +203,141 @@ def add_group_to_tree(group,treefile,outdir,to_compress=False):
 		node.set_style(nstyle)
 
 	return tree
+
+
+def subset_matrix(strains,outdir):
+	infile = open(os.path.join(outdir,"homolog_matrix.txt"),'r')
+	header_line = infile.readline().rstrip().split("\t")
+	indices = [header_line.index(s) for s in strains]
+
+	lines = []
+	groups = []
+	for line in infile:
+		vals = line.rstrip().split("\t")
+		# convert input data into boolean presence/absence
+		lines.append([int(bool(int(vals[i]))) for i in indices])
+		groups.append(vals[0])
+	a = np.stack(lines)
+	return a, groups
+
+
+def dump_matrix(cc,strains,outfile):
+	o = open(outfile,'w')
+	o.write("\t{}\n".format("\t".join(strains)))
+	for i in range(0,len(strains)):
+		o.write("{}\t{}\n".format(strains[i],"\t".join([str(x) for x in cc[i]])))
+	o.close()
+	return
+
+def find_unique_genes(a,strains,groups):
+	unique = {}
+	missing = {}
+	common = []
+	for s in strains:
+		unique[s] = []
+		missing[s] = []
+	for i in range(0,a.shape[0]):
+		nz = np.nonzero(a[i])
+		if len(nz[0]) == 1:
+			unique[strains[nz[0][0]]].append(groups[i])
+		elif len(nz[0]) == len(strains)-1:
+			missing[strains[np.nonzero(a[i] < 1)[0][0]]].append(groups[i])
+		elif len(nz[0]) == len(strains):
+			common.append(groups[i])
+		else:
+			pass
+	for s in strains:
+		print s
+		print "\t", len(unique[s]), "unique"
+		print "\t", len(missing[s]), "missing"
+	print len(common), "common to all strains."
+	return {"unique":unique,"missing":missing,"common":common}
+
+def find_unique_loci(strain,outdir,uniq_info):
+	locusfile = open(os.path.join(outdir,"locustag_matrix.txt"),'r')
+	header_line = locusfile.readline().rstrip().split("\t")
+	i = header_line.index(strain)
+
+	unique_loci = []
+	for line in locusfile:
+		vals = line.rstrip().split("\t")
+		if vals[0] in uniq_info["unique"][strain]:
+			for x in vals[i].split(";"):
+				unique_loci.append(x)
+	return unique_loci
+
+def plot_unique_genome_diagram(gbk, unique_loci):
+	parser = GenBank.FeatureParser()
+	fhandle = open(gbk, 'r')
+	genbank_entry = parser.parse(fhandle)
+	fhandle.close()
+
+	gdd = GenomeDiagram.Diagram(gbk)
+	gd_track_for_features = gdd.new_track(1, name="CDS",scale_smalltick_interval=100000)
+	gdfs = gd_track_for_features.new_set()
+	for feature in genbank_entry.features:
+		if feature.type == 'CDS':
+			feature.strand = 1
+			if feature.qualifiers['locus_tag'][0] in unique_loci:
+				gdfs.add_feature(feature, color=rcolors.HexColor("#93341F"))
+			else:
+				gdfs.add_feature(feature, color=rcolors.HexColor("#058F45"))
+	gdd.draw(format='circular', orientation='landscape',tracklines=0, pagesize='A5', fragments=5, circular=1)
+	return gdd
+
+def synteny_check(gbk,outdir,map_to,strains,outfile):
+	seqs = {}
+	for seq in SeqIO.parse(open(gbk,'r'),'genbank'):
+		seqs[seq.id] = []
+		for feat in seq.features:
+			if feat.type == "CDS":
+				try:
+					seqs[seq.id].append(feat.qualifiers["locus_tag"][0])
+				except KeyError:
+					seqs[seq.id].append(feat.qualifiers["protein_id"][0])
+	groupdict = {}
+
+	locustags = []
+	for seq in seqs:
+		for s in seqs[seq]:
+			locustags.append(s)
+
+	header = open(os.path.join(outdir,"locustag_matrix.txt"),'r').readline().rstrip().split("\t")
+	i = header.index(map_to)
+	indices = [header.index(x) for x in strains]
+	for line in open(os.path.join(outdir,"locustag_matrix.txt"),'r'):
+		vals = [v.split(".")[0] for v in line.rstrip().split("\t")[i].split(";")]
+		for s in locustags:
+			if s in vals:
+				groupdict[s] = line.rstrip().split("\t")[0]
+
+	groups = [g for g in groupdict.values()]
+	datadict = {}
+	for line in open(os.path.join(outdir,"locustag_matrix.txt"),'r'):
+		vals = line.rstrip().split("\t")
+		if vals[0] in groups:
+			datadict[vals[0]] = []
+			for i in indices:
+				if len(vals[i].split(";")) > 1:
+					datadict[vals[0]].append("Multiple")
+				else:
+					datadict[vals[0]].append(vals[i])
+
+	group_annotations = {}
+	for line in open(os.path.join(outdir,"group_descriptions.txt"),'r'):
+		vals = line.rstrip().split("\t")
+		counts = {}
+		for x in set(vals[1:]):
+			counts[x] = vals.count(x)
+		group_annotations[vals[0]] = sorted(counts.items(), reverse=True, key = lambda x: x[1])[0][0]
+
+	o = open(outfile,'w')
+	for seq in seqs:
+		o.write(">{}\n".format(seq))
+		o.write("{}\tgroup\t{}\tannotation\n".format(map_to,"\t".join(strains)))
+		for s in seqs[seq]:
+			try:
+				o.write("{}\t{}\t{}\t{}\n".format(s,groupdict[s],"\t".join(datadict[groupdict[s]]),group_annotations[groupdict[s]]))
+			except KeyError:
+				pass
+	return
