@@ -5,116 +5,10 @@ from Bio.SeqFeature import FeatureLocation
 import seaborn as sns
 import random
 import argparse, os, sys, math
-from reportlab.lib.units import inch
 from ete3 import Tree, TreeStyle, NodeStyle
 import matplotlib.colors as colors
 from reportlab.lib import colors as rcolors
 import numpy as np
-
-def parse_genbank(g):
-	if g[2] == "ensembl" or g[2] == "refseq":
-		FIELD = "protein_id"
-	elif g[2] == "prokka":
-		FIELD = "locus_tag"
-	for seq in SeqIO.parse(open(g[0],'r'),"genbank"):
-		for feat in seq.features:
-			if feat.type == "CDS":
-				try:
-					if feat.qualifiers[FIELD][0] == g[1]:
-						print "Found", g[1], "in", seq.id
-						print "loc:",feat.location
-						return seq, (int(feat.location.start), int(feat.location.end))
-				except KeyError:
-					pass
-
-	print "locus not found. try again."
-	sys.exit()
-	return
-
-def find_homologs(GD, locus_tags, locus_mat,hl_groups):
-	groups = {}
-	count = 0
-	print locus_tags
-	for line in open(locus_mat,'r'):
-		vals = [v.split(".")[0] for v in [x.split(";") for x in line.rstrip().split("\t")] for v in v]
-		found = []
-		for strain in locus_tags:
-			for t in locus_tags[strain]:
-				if t in vals:
-					found.append((strain,t))
-
-		if vals[0] in hl_groups:
-			for f in found:
-				groups[f[1]] = "HIGHLIGHT"
-		elif len(found) > 1:
-			for f in found:
-				groups[f[1]] = count
-			count += 1
-		else:
-			pass
-	print groups
-	return groups
-
-def change_colors(GD, groups):
-	cl = [colors.HexColor(c) for c in sns.cubehelix_palette(len(set(groups.values())),dark=0.1,light=0.9,rot=2.5).as_hex()]
-	random.shuffle(cl)
-	for t in GD.get_tracks():
-		for s in t.get_sets():
-			for feat in s.get_features():
-				if feat.name.split(".")[0] in groups:
-					if groups[feat.name.split(".")[0]] == "HIGHLIGHT":
-						feat.color = colors.HexColor(u"#4df92a")
-					else:
-						feat.color = cl[groups[feat.name.split(".")[0]]]
-	return
-
-def make_tracks(seq, span, coords, g, GD, count, locus_tags, labels):
-
-	if g[2] == "ensembl" or g[2] == "refseq":
-		FIELD = "protein_id"
-	elif g[2] == "prokka":
-		FIELD = "locus_tag"
-
-	track = GD.new_track(count, height=1, name="CDS",\
-		scale_ticks=False,scale_largeticks=False,scale_largetick_labels=False, scale_largetick_interval=10000,\
-		scale_smallticks=False, scale_smalltick_labels=False, scale_smalltick_interval=1000,\
-		greytrack=False, hide=False, scale=False
-	)
-	feature_set = track.new_set()
-
-
-	count = 0
-	for feat in seq.features:
-		if feat.type == "CDS":
-			if int(feat.location.start) > (coords[0]-(span/2)) and int(feat.location.end) < (coords[1]+(span/2)):
-				newloc = FeatureLocation(feat.location.start-(coords[0]-(span/2)),feat.location.end-(coords[0]-(span/2)),strand=feat.strand)
-				feat.location = newloc
-				print newloc
-				if g[2] == "prokka" or g[2] == "refseq":
-					feature_set.add_feature(feat, sigil="BIGARROW", arrowshaft_height=1, arrowhead_length=.4,color="#D3D3D3", \
-						label=labels,name=feat.qualifiers['product'][0],label_strand=1,label_size = 8,label_position="middle", label_angle=20, \
-						border=colors.black)
-				try:
-					feature_set.add_feature(feat, sigil="BIGARROW", arrowshaft_height=1, arrowhead_length=.4,color="#D3D3D3", \
-						label=labels,name=feat.qualifiers[FIELD][0],label_strand=-1,label_size = 8,label_position="middle", label_angle=90, \
-						border=colors.black)
-					locus_tags[g[0].split(".")[0]].append(feat.qualifiers[FIELD][0].split(".")[0])
-				except KeyError:
-					pass
-		elif feat.type == "gene":
-			if g[2] == "ensembl" or g[2] == "refseq":
-				if int(feat.location.start) > (coords[0]-(span/2)) and int(feat.location.end) < (coords[1]+(span/2)):
-					newloc = FeatureLocation(feat.location.start-(coords[0]-(span/2)),feat.location.end-(coords[0]-(span/2)),strand=feat.strand)
-					feat.location = newloc
-					try:
-						feature_set.add_feature(feat, sigil="BIGARROW", arrowshaft_height=1, arrowhead_length=.4,color="#D3D3D3", \
-							label=labels,name=feat.qualifiers['note'][0],label_strand=1,label_size = 8,label_position="middle", label_angle=20, \
-							border=colors.black)
-					except KeyError:
-						pass
-
-	return
-
 
 def match_seqs(fastafile,outdir):
 	os.system("phmmer --tblout {} {} {}".format(os.path.join(os.path.abspath(outdir),".phmmer.hits"),os.path.abspath(fastafile),os.path.join(outdir,"all_groups.faa")))
@@ -340,4 +234,148 @@ def synteny_check(gbk,outdir,map_to,strains,outfile):
 				o.write("{}\t{}\t{}\t{}\n".format(s,groupdict[s],"\t".join(datadict[groupdict[s]]),group_annotations[groupdict[s]]))
 			except KeyError:
 				pass
+	return
+
+
+def _parse_genbank(g,h,genomedb):
+	if h[1] == "ensembl" or h[1] == "NCBI":
+		FIELD = "protein_id"
+	elif h[1] == "prokka_in_house":
+		FIELD = "locus_tag"
+	for seq in SeqIO.parse(open(os.path.join(os.path.abspath(genomedb),"gbk",h[0]+".gbk"),'r'),"genbank"):
+		for feat in seq.features:
+			if feat.type == "CDS":
+				try:
+					if feat.qualifiers[FIELD][0] == g:
+						return seq, (int(feat.location.start), int(feat.location.end))
+				except KeyError:
+					pass
+
+	print "locus not found. try again."
+	return
+
+def _parse_genbank(g,genomedb):
+	if g[2] == "ensembl" or g[2] == "NCBI":
+		FIELD = "protein_id"
+	elif g[2] == "prokka_in_house":
+		FIELD = "locus_tag"
+	for seq in SeqIO.parse(open(os.path.join(os.path.abspath(genomedb),"gbk",g[0]+".gbk"),'r'),"genbank"):
+		for feat in seq.features:
+			if feat.type == "CDS":
+				try:
+					if feat.qualifiers[FIELD][0] == g[1]:
+						return seq, (int(feat.location.start), int(feat.location.end))
+				except KeyError:
+					pass
+
+	print "locus not found. try again."
+	return
+
+def _make_tracks(seq, span, coords, g, GD, count, locus_tags, labels):
+
+	if g[2] == "ensembl" or g[2] == "NCBI":
+		FIELD = "protein_id"
+	elif g[2] == "prokka_in_house":
+		FIELD = "locus_tag"
+
+	track = GD.new_track(count, height=1, name="CDS",\
+		scale_ticks=False,scale_largeticks=False,scale_largetick_labels=False, scale_largetick_interval=10000,\
+		scale_smallticks=False, scale_smalltick_labels=False, scale_smalltick_interval=1000,\
+		greytrack=False, hide=False, scale=False
+	)
+	feature_set = track.new_set()
+
+
+	count = 0
+	for feat in seq.features:
+		if feat.type == "CDS":
+			if int(feat.location.start) > (coords[0]-(span/2)) and int(feat.location.end) < (coords[1]+(span/2)):
+				newloc = FeatureLocation(feat.location.start-(coords[0]-(span/2)),feat.location.end-(coords[0]-(span/2)),strand=feat.strand)
+				feat.location = newloc
+				if g[2] == "prokka_in_house" or g[2] == "NCBI":
+					feature_set.add_feature(feat, sigil="BIGARROW", arrowshaft_height=1, arrowhead_length=.4,color="#D3D3D3", \
+						label=labels,name=feat.qualifiers['product'][0],label_strand=1,label_size = 8,label_position="middle", label_angle=20, \
+						border=rcolors.black)
+				try:
+					feature_set.add_feature(feat, sigil="BIGARROW", arrowshaft_height=1, arrowhead_length=.4,color="#D3D3D3", \
+						label=labels,name=feat.qualifiers[FIELD][0],label_strand=-1,label_size = 8,label_position="middle", label_angle=90, \
+						border=rcolors.black)
+					locus_tags[g[0].split(".")[0]].append(feat.qualifiers[FIELD][0].split(".")[0])
+				except KeyError:
+					pass
+		elif feat.type == "gene":
+			if g[2] == "ensembl" or g[2] == "NCBI":
+				if int(feat.location.start) > (coords[0]-(span/2)) and int(feat.location.end) < (coords[1]+(span/2)):
+					newloc = FeatureLocation(feat.location.start-(coords[0]-(span/2)),feat.location.end-(coords[0]-(span/2)),strand=feat.strand)
+					feat.location = newloc
+					try:
+						feature_set.add_feature(feat, sigil="BIGARROW", arrowshaft_height=1, arrowhead_length=.4,color="#D3D3D3", \
+							label=labels,name=feat.qualifiers['note'][0],label_strand=1,label_size = 8,label_position="middle", label_angle=20, \
+							border=rcolors.black)
+					except KeyError:
+						pass
+
+	return
+
+def plot_genomic_regions(locustagfile,genomedb,pypdir,span=50000,hl_groups=[],labels=False):
+	strains = {}
+	for line in open(os.path.abspath(locustagfile),'r'):
+		vals = line.rstrip().split("\t")
+		strains[vals[1]] = [vals[0]]
+
+	for line in open(os.path.join(os.path.abspath(genomedb),"genome_metadata.txt"),'r'):
+		vals = line.rstrip().split("\t")
+		for i in strains:
+			if strains[i][0] == vals[2]:
+				strains[i].append(vals[6].split("-")[0])
+
+	genfiles = [[strains[x][0],x,strains[x][1]] for x in strains]
+
+	GD = GenomeDiagram.Diagram('gbk',"temp.pdf")
+	count = 1
+	locus_tags = {}
+	for g in genfiles:
+		if g[0] not in locus_tags:
+			locus_tags[g[0]] = []
+		contigseq, coords = _parse_genbank(g,genomedb)
+		_make_tracks(contigseq, span, coords, g, GD, count, locus_tags, labels)
+		count += 1
+
+	groups = _find_homologs(GD, locus_tags,os.path.join(pypdir,"locustag_matrix.txt"),hl_groups)
+	_change_colors(GD, groups)
+	return GD
+
+def _find_homologs(GD, locus_tags, locus_mat,hl_groups):
+	groups = {}
+	count = 0
+	for line in open(locus_mat,'r'):
+		vals = [v.split(".")[0] for v in [x.split(";") for x in line.rstrip().split("\t")] for v in v]
+		found = []
+		for strain in locus_tags:
+			for t in locus_tags[strain]:
+				if t in vals:
+					found.append((strain,t))
+
+		if vals[0] in hl_groups:
+			for f in found:
+				groups[f[1]] = "HIGHLIGHT"
+		elif len(found) > 1:
+			for f in found:
+				groups[f[1]] = count
+			count += 1
+		else:
+			pass
+	return groups
+
+def _change_colors(GD, groups):
+	cl = [rcolors.HexColor(c) for c in sns.cubehelix_palette(len(set(groups.values())),dark=0.1,light=0.9,rot=2.5).as_hex()]
+	random.shuffle(cl)
+	for t in GD.get_tracks():
+		for s in t.get_sets():
+			for feat in s.get_features():
+				if feat.name.split(".")[0] in groups:
+					if groups[feat.name.split(".")[0]] == "HIGHLIGHT":
+						feat.color = rcolors.HexColor(u"#4df92a")
+					else:
+						feat.color = cl[groups[feat.name.split(".")[0]]]
 	return

@@ -52,9 +52,11 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 	for j in ens.pwd().split("/"):
 		if j.startswith("release"):
 			print "Current release of EnsemblBacteria:", j
+			o = open(os.path.join(outdir,"{}.txt".format(j)),'w')
 			break
 
 	fields = ["assembly_id",'assembly_level','base_count','name', 'strain', 'dbname','species','taxonomy_id','contigs','protein_coding_genes']
+	o.write("\t".join(fields)+"\n")
 
 	items = ijson.items(urlopen("ftp://ftp.ensemblgenomes.org/{}/species_metadata_EnsemblBacteria.json".format(ens.pwd())),'item')
 	count = 0
@@ -99,6 +101,8 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 				else:
 					genomes = get_data(genomes,js)
 
+		o.write("\t".join([str(x) for x in thisline])+"\n")
+
 		if count % 10000 == 0:
 			print "\t", count, "JSON records parsed."
 		if maxgen is not None:
@@ -110,6 +114,7 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 	print len(assemblies), "found in", os.path.basename(outdir)+"."
 	print len(genomes), "remaining to download."
 	ens.close()
+	o.close()
 	for g in genomes:
 		genomes[g]["version"] = j
 	Ensembl_ftp(genomes,outdir)
@@ -368,3 +373,91 @@ def get_taxdata_from_genomedb(outdir, max_queries):
 			if vals[2] not in existing:
 				taxdata[vals[2]] = vals[3]
 	return taxdata
+
+def download_genbank_files(strains,genomedb):
+	prokka = []
+	refseq = []
+	ensembl = {}
+	for line in open(os.path.join(genomedb,"genome_metadata.txt")):
+		vals = line.rstrip().split("\t")
+		if vals[2] in strains:
+			if vals[6].startswith("ensembl"):
+				rel = "-".join(vals[6].split("-")[1:])
+				if rel not in ensembl:
+					ensembl[rel] = [vals[2]]
+				else:
+					ensembl[rel].append(vals[2])
+			elif vals[6].startswith("NCBI"):
+				refseq.append((vals[0],vals[2]))
+			elif vals[6].startswith("prokka"):
+				prokka.append((vals[0],vals[2]))
+			else:
+				pass
+
+
+	p_count = 0
+	for p in prokka:
+		if os.path.exists(os.path.join(genomedb,"gbk",p[1]+".gbk")):
+			pass
+			p_count += 1
+		else:
+			print "Genbank from prokka assembly",p[1], "not found..."
+
+	ens = ftplib.FTP('ftp.ensemblgenomes.org')
+	ens.login()
+	e_count = 0
+	for e in ensembl:
+		for line in open(os.path.join(genomedb,"{}.txt".format(e)),'r'):
+			vals = line.rstrip().split("\t")
+			if vals[6] in ensembl[e]:
+				if os.path.exists(os.path.join(genomedb,"gbk",vals[6]+".gbk")):
+					e_count += 1
+				else:
+					wd = '/pub/{}/bacteria/genbank/{}_collection/{}'.format(e,"_".join(vals[5].split("_")[0:2]),vals[6])
+					ens.cwd(wd)
+
+					for filepath in ens.nlst():
+						if filepath.endswith(".dat.gz"):
+							o = open(os.path.join(genomedb,"gbk",vals[6]+'.gbk.gz'),'wb')
+							ens.retrbinary("RETR " + filepath, o.write)
+							o.close()
+							cmds = ["gunzip",os.path.join(genomedb,"gbk",vals[6]+'.gbk.gz')]
+							proc = subprocess.Popen(cmds)
+							proc.wait()
+					e_count += 1
+			else:
+				pass
+	ens.close()
+
+	r_count = 0
+	for r in refseq:
+		if os.path.exists(os.path.join(genomedb,"gbk",r[1]+".gbk")):
+			r_count += 1
+		else:
+			assembly = r[0].split("_")[1]
+			species = r[1]
+			ens = ftplib.FTP('ftp.ncbi.nlm.nih.gov')
+			ens.login()
+			ens.cwd("/genomes/all/GCF/{}/{}/{}".format(assembly[0:3],assembly[3:6], assembly[6:9]))
+			for f in ens.nlst():
+				if f.split("_")[1] == assembly:
+					ens.cwd(f)
+					for g in ens.nlst():
+						if g.endswith("_genomic.gbff.gz"):
+							filepath = os.path.join(genomedb,"gbk","{}.gbk.gz".format(species))
+							gbk = open(filepath,'wb')
+							ens.retrbinary("RETR " + g, gbk.write)
+							gbk.close()
+							cmds = ["gunzip",os.path.join(genomedb,"gbk","{}.gbk.gz".format(species))]
+							proc = subprocess.Popen(cmds)
+							proc.wait()
+							r_count += 1
+			ens.close()
+
+	e_tot = 0
+	for e in ensembl:
+		e_tot += len(ensembl[e])
+	print p_count,"of", len(prokka), "prokka genbank files available."
+	print e_count,"of", e_tot, "Ensembl genbank files available."
+	print r_count, "of", len(refseq), "refseq files available."
+	return
