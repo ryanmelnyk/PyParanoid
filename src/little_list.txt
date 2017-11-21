@@ -1,0 +1,5 @@
+pseudomonas_sp_root401	KQW30295
+pseudomonas_fluorescens_gca_001307275	ALI10530
+pseudomonas_sp__nfacc24_1	WP_092475399.1
+pseudomonas_sp__nfacc37_1	WP_092164970.1
+pseudomonas_sp__nfacc04_2	WP_072405401.1

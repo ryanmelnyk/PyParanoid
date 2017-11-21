@@ -1,0 +1,5 @@
+pseudomonas_brassicacearum_subsp_brassicacearum_nfm421
+pseudomonas_sp_wcs365
+pseudomonas_sp_pseudo5_n2c3
+pseudomonas_sp_pseudo6_fw300_n2e2
+pseudomonas_fluorescens_f113
