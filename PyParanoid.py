@@ -157,7 +157,7 @@ def run_inparanoid(strains):
 		if verbose:
 			print "Prepping InParanoid batch files..."
 		for p in pairs:
-			cmds = "perl {}/src/inparanoid2.pl {} {} {}".format(pypath,p[0],p[1],outdir+"/")
+			cmds = "inparanoid2.pl {} {} {}".format(pypath,p[0],p[1],outdir+"/")
 			jobfile.write("{}\n".format(cmds))
 		jobfile.close()
 	else:
@@ -172,7 +172,7 @@ def run_inparanoid(strains):
 	return
 
 def IP_RUN(p):
-	cmds = "perl {}/src/inparanoid2.pl {} {} {}".format(pypath,p[0],p[1],outdir+"/")
+	cmds = "inparanoid2.pl {} {} {}".format(pypath,p[0],p[1],outdir+"/")
 	proc = subprocess.Popen(cmds.split())
 	proc.wait()
 	return
