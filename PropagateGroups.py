@@ -145,7 +145,7 @@ def run_inparanoid(strains,pypath):
 	return
 
 def IP_RUN(s):
-	cmds = "inparanoid2.pl {} {} {}".format(pypath,s,"CONSENSUS",outdir+"/prop_")
+	cmds = "inparanoid2.pl {} {} {}".format(s,"CONSENSUS",outdir+"/prop_")
 	proc = subprocess.Popen(cmds.split())
 	proc.wait()
 	return
