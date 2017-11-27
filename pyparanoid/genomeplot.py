@@ -334,7 +334,7 @@ def plot_genomic_regions(locustagfile,genomedb,pypdir,span=50000,hl_groups=[],la
 	GD = GenomeDiagram.Diagram('gbk',"temp.pdf")
 	count = 1
 	locus_tags = {}
-	for g in genfiles:
+	for g in genfiles.reverse():
 		if g[0] not in locus_tags:
 			locus_tags[g[0]] = []
 		contigseq, coords = _parse_genbank(g,genomedb)
