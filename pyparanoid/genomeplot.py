@@ -303,17 +303,6 @@ def _make_tracks(seq, span, coords, g, GD, count, locus_tags, labels):
 					locus_tags[g[0].split(".")[0]].append(feat.qualifiers[FIELD][0].split(".")[0])
 				except KeyError:
 					pass
-		elif feat.type == "gene":
-			if g[2] == "ensembl" or g[2] == "NCBI":
-				if int(feat.location.start) > (coords[0]-(span/2)) and int(feat.location.end) < (coords[1]+(span/2)):
-					newloc = FeatureLocation(feat.location.start-(coords[0]-(span/2)),feat.location.end-(coords[0]-(span/2)),strand=feat.strand)
-					feat.location = newloc
-					try:
-						feature_set.add_feature(feat, sigil="BIGARROW", arrowshaft_height=1, arrowhead_length=.4,color="#D3D3D3", \
-							label=labels,name=feat.qualifiers['note'][0],label_strand=1,label_size = 8,label_position="middle", label_angle=20, \
-							border=rcolors.black)
-					except KeyError:
-						pass
 
 	return
 
