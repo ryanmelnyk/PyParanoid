@@ -236,24 +236,6 @@ def synteny_check(gbk,outdir,map_to,strains,outfile):
 				pass
 	return
 
-
-def _parse_genbank(g,h,genomedb):
-	if h[1] == "ensembl" or h[1] == "NCBI":
-		FIELD = "protein_id"
-	elif h[1] == "prokka_in_house":
-		FIELD = "locus_tag"
-	for seq in SeqIO.parse(open(os.path.join(os.path.abspath(genomedb),"gbk",h[0]+".gbk"),'r'),"genbank"):
-		for feat in seq.features:
-			if feat.type == "CDS":
-				try:
-					if feat.qualifiers[FIELD][0] == g:
-						return seq, (int(feat.location.start), int(feat.location.end))
-				except KeyError:
-					pass
-
-	print "locus not found. try again."
-	return
-
 def _parse_genbank(g,genomedb):
 	if g[2] == "ensembl" or g[2] == "NCBI":
 		FIELD = "protein_id"
@@ -267,7 +249,7 @@ def _parse_genbank(g,genomedb):
 						return seq, (int(feat.location.start), int(feat.location.end))
 				except KeyError:
 					pass
-
+	print g
 	print "locus not found. try again."
 	return
 
@@ -307,42 +289,43 @@ def _make_tracks(seq, span, coords, g, GD, count, locus_tags, labels):
 	return
 
 def plot_genomic_regions(locustagfile,genomedb,pypdir,span=50000,hl_groups=[],labels=False):
-	strains = {}
+	strains = []
 	for line in open(os.path.abspath(locustagfile),'r'):
 		vals = line.rstrip().split("\t")
-		strains[vals[1]] = [vals[0]]
+		strains.append([vals[0],vals[1]])
 
 	for line in open(os.path.join(os.path.abspath(genomedb),"genome_metadata.txt"),'r'):
 		vals = line.rstrip().split("\t")
-		for i in strains:
+		for i in range(0,len(strains)):
 			if strains[i][0] == vals[2]:
 				strains[i].append(vals[6].split("-")[0])
-
-	genfiles = [[strains[x][0],x,strains[x][1]] for x in strains]
 
 	GD = GenomeDiagram.Diagram('gbk',"temp.pdf")
 	count = 1
 	locus_tags = {}
-	for g in reversed(genfiles):
+	for g in reversed(strains):
 		if g[0] not in locus_tags:
 			locus_tags[g[0]] = []
 		contigseq, coords = _parse_genbank(g,genomedb)
 		_make_tracks(contigseq, span, coords, g, GD, count, locus_tags, labels)
 		count += 1
 
-	groups = _find_homologs(GD, locus_tags,os.path.join(pypdir,"locustag_matrix.txt"),hl_groups)
+	groups = _find_homologs(GD, locus_tags,os.path.join(pypdir,"locustag_matrix.txt"),hl_groups,set([x[0] for x in strains]))
 	_change_colors(GD, groups)
 	return GD
 
-def _find_homologs(GD, locus_tags, locus_mat,hl_groups):
+def _find_homologs(GD, locus_tags, locus_mat,hl_groups,strains):
 	groups = {}
 	count = 0
+
+	indices = [open(locus_mat,'r').readline().rstrip().split("\t").index(s) for s in strains]
 	for line in open(locus_mat,'r'):
-		vals = [v.split(".")[0] for v in [x.split(";") for x in line.rstrip().split("\t")] for v in v]
+		vals = line.rstrip().split("\t")
+		tags = set([v.split(".")[0] for v in [x.split(";") for x in [vals[i] for i in indices]] for v in v])
 		found = []
 		for strain in locus_tags:
 			for t in locus_tags[strain]:
-				if t in vals:
+				if t in tags:
 					found.append((strain,t))
 
 		if vals[0] in hl_groups:
