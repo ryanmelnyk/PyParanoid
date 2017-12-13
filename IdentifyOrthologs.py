@@ -20,8 +20,7 @@ argument relaxes the cutoff and includes homologs that occur exactly once in som
 	parser.add_argument('--clean',action="store_true",help="clean up intermediate files")
 	parser.add_argument('--strains',type=str,help='specify if a subset of strains are to be identified')
 	parser.add_argument('--orthos',type=str,help="specify to use previously calculated groups")
-	parser.add_argument('--use_MP',action="store_true",help="use the python multiprocessing module to dramatically speed up certain steps \
-							by utilizing multiple cores. may be unstable under Mac OS X High Sierra.")
+	parser.add_argument('--use_MP',action="store_true",help="use the python multiprocessing module for dramatic speed up")
 	return parser.parse_args()
 
 

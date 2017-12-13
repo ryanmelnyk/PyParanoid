@@ -7,7 +7,7 @@ setup(
 name='PyParanoid',
 packages = ['pyparanoid'],
 scripts = ['IdentifyOrthologs.py','PropagateGroups.py','BuildGroups.py','inparanoid2.pl'],
-version='0.2.1dev',
+version='0.2.1',
 description='Fast and scalable homolog detection for thousands of genomes',
 long_description=open('README.md').read(),
 author='Ryan A. Melnyk',

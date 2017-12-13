@@ -20,8 +20,7 @@ Using consensus sequences for each homolog group to propagate to new genomes.
 	parser.add_argument('new_strainlist',type=str,help='path to list of new strains')
 	parser.add_argument('outdir', type=str,help='path to directory containing PyParanoid output')
 	parser.add_argument('--cpus',type=int,help='number of cpus to use - defaults to # available')
-	parser.add_argument('--use_MP',action="store_true",help="use the python multiprocessing module to dramatically speed up certain steps \
-						by utilizing multiple cores. may be unstable under Mac OS X High Sierra.")
+	parser.add_argument('--use_MP',action="store_true",help="use the python multiprocessing module to dramatically speed up certain steps.")
 	return parser.parse_args()
 
 def check_strains(new_strains,genomedb):

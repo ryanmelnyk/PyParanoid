@@ -31,8 +31,7 @@ modes: setup, parse, cluster, extract
 	parser.add_argument('--inflate', type=float,help="inflation parameter for mcl, default = 2")
 	parser.add_argument('--verbose',action="store_true",help="Print progress to STDOUT")
 	parser.add_argument('--multi',action="store_true",help="use only with mode setup and parse")
-	parser.add_argument('--use_MP',action="store_true",help="use the python multiprocessing module to dramatically speed up certain steps \
-						by utilizing multiple cores. may be unstable under Mac OS X High Sierra.")
+	parser.add_argument('--use_MP',action="store_true",help="use the python multiprocessing module to dramatically speed up certain steps")
 	return parser.parse_args()
 
 def setupdir(strains,genomedb):

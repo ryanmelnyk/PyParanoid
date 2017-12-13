@@ -80,7 +80,7 @@ PyParanoid also requires a ```strainlist.txt``` which should be a text file cont
 
 Generally the way I use PyParanoid is to build a pangenome using only high-quality reference genomes.  This is primarily because draft genomes in many contigs frequently have split, truncated, or missing genes due to assembly breakpoints.  Once the pangenome is built, these draft genomes can be added to the database.  Importantly, they can be added incrementallyas new sequences become available.
 
-As an example, I built gene models for ~200 Pseudomonas strains in late 2016 and then annotated ~3000 more genomes since then using those models.  To add additional genomes now, I simply propagate the gene families to the new genomes rather than redoing the entire workflow.
+As an example, I built gene models for ~200 Pseudomonas strains in late 2016 and then annotated >3600 more genomes since then using those models.  To add additional genomes now, I simply propagate the gene families to the new genomes rather than redoing the entire workflow.
 
 Of course, this is a tradeoff between computational time and detecting novel gene families.  Obviously, it depends on the phylogenetic distribution or the training dataset vs. the test dataset.  If you used a training set of hundreds of genomes that are broadly distributed across a genus or family, you will have better luck propagating those gene families than if you use only a few dozen strains from a single species as the training dataset and then use those gene families on a test dataset containg genomes from a different genus or family. A good example of how to be confident in the phylogenetic scope of the training and test datasets can be found in the PyParanoid manuscript.
 
@@ -90,21 +90,24 @@ Of course, this is a tradeoff between computational time and detecting novel gen
 
 ```bash
 ## Run PyParanoid to generate homology calls and models
-BuildGroups.py --clean --verbose pfl_genomeDB strainlist.txt pfl_pyp
+BuildGroups.py --clean --verbose --use_MP  --cpus 8 pfl_genomeDB strainlist.txt pfl_pyp
 
 ## Propagate groups to new draft genomes
 PropagateGroups.py pfl_genomeDB prop_strainlist.txt pfl_pyp
+
+## Because the database is persistent you can add new genomes whenever you want.
+PropagateGroups.py new_genomes new_genome_list.txt pfl_pyp
 ```
 
 ###### Pull out orthologs
 
-This command pulls out orthologs from the "pfl_pyp" database generated in the previous section. As this dataset includes many draft genomes with missing or fragmented genes, specifying a threshold is a good idea. ```--threshold 0.9``` will find genes present as a single copy in over 90% of all strains. If no threshold is specified, orthologs will be "strict" (i.e. present as a single copy in every strain).
+This command pulls out orthologs from the "pfl_pyp" database generated in the previous section. As this dataset includes many draft genomes with missing or fragmented genes, specifying a threshold is a good idea. ```--threshold 0.95``` will find genes present as a single copy in over 95% of all strains. If no threshold is specified, orthologs will be "strict" (i.e. present as a single copy in every strain).
 
 ```bash
-IdentifyOrthologs.py --threshold 0.9 pfl_pyp pfl_ortho
+IdentifyOrthologs.py --threshold 0.95 pfl_pyp pfl_ortho
 ```
 
-This produces a file ```master_alignment.faa``` which can be used to generate a species tree using your method of choice.
+This produces a file ```master_alignment.faa``` which can be used to generate a species tree using your method of choice. (I like FastTree and RAxML!)
 
 ## Analysis examples
 
@@ -115,4 +118,4 @@ Check them out in the ```analysis_ipython``` folder.  They all depend on my loca
 
 ## Citing PyParanoid
 
-if you're reading this PyParanoid is still in development so just cite this github page.
+if you're reading this I'm still working on a manuscript containing PyParanoid so just cite this github page.

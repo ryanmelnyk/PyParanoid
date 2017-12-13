@@ -96,7 +96,7 @@ def dump_matrices(outdir):
 	o_loc.write("\t{}\n".format("\t".join(strains)))
 	o_hom.write("\t{}\n".format("\t".join(strains)))
 
-	for f in os.listdir(os.path.join(outdir,"homolog_faa")):
+	for f in sorted(os.listdir(os.path.join(outdir,"homolog_faa"))):
 		hits = {s : [] for s in strains}
 		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_faa",f),'r'),'fasta'):
 			hits[seq.id.split("|")[0]].append(seq.id.split("|")[1])
