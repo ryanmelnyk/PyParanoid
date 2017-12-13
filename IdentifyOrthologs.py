@@ -5,7 +5,7 @@
 
 import os, argparse, subprocess, errno, sys, string
 import multiprocessing as mp
-import PyParanoid.pyparanoid as pp
+import pyparanoid.pyparanoid as pp
 from Bio import SeqIO
 
 def parse_args():
