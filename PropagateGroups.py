@@ -20,6 +20,8 @@ Using consensus sequences for each homolog group to propagate to new genomes.
 	parser.add_argument('new_strainlist',type=str,help='path to list of new strains')
 	parser.add_argument('outdir', type=str,help='path to directory containing PyParanoid output')
 	parser.add_argument('--cpus',type=int,help='number of cpus to use - defaults to # available')
+	parser.add_argument('--use_MP',action="store_true",help="use the python multiprocessing module to dramatically speed up certain steps \
+						by utilizing multiple cores. may be unstable under Mac OS X High Sierra.")
 	return parser.parse_args()
 
 def check_strains(new_strains,genomedb):
@@ -139,10 +141,14 @@ def get_genes(strains):
 def run_inparanoid(strains,pypath):
 	print "Running inparanoid on", len(strains), "strains..."
 	count = len(strains)
-	pool = mp.Pool(processes=cpus)
-	[pool.apply_async(IP_RUN, args=(s,)) for s in strains]
-	pool.close()
-	pool.join()
+	if use_MP:
+		pool = mp.Pool(processes=cpus)
+		[pool.apply_async(IP_RUN, args=(s,)) for s in strains]
+		pool.close()
+		pool.join()
+	else:
+		for s in strains:
+			IP_RUN(s)
 	return
 
 def IP_RUN(s):
@@ -194,6 +200,12 @@ def main():
 		cpus = args.cpus
 	else:
 		cpus = mp.cpu_count()
+
+	global use_MP
+	if args.use_MP:
+		use_MP = True
+	else:
+		use_MP = False
 
 	pp.createdirs(outdir,["prop_faa","prop_dmnd","prop_m8","prop_out","prop_paranoid_output","prop_homolog_faa"])
 	check_strains(new_strains,genomedb)

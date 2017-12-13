@@ -2,7 +2,7 @@
 
 **Ryan Melnyk**  
 **[Haney Lab - University of British Columbia](https://haneylab.msl.ubc.ca/)**  
-**v0.1 - release November 2017**
+**v0.2.1 - release December 13, 2017**
 
 ***ryan.melnyk@msl.ubc.ca***  
 ***schmelnyk@gmail.com***
@@ -19,13 +19,15 @@ I have also included some methods that facilitate upstream genome database manag
 
 PyParanoid is primarily written in python.  To manage python installations and environments, I highly recommend using [Miniconda](https://conda.io/miniconda.html).
 
-PyParanoid also depends on a modified version of the InParanoid script ([Sonnhammer et al., 2015](http://inparanoid.sbc.su.se/cgi-bin/faq.cgi)) and thus also requires perl to be installed.
+PyParanoid also depends on a modified version of the InParanoid script ([Sonnhammer et al., 2015](http://inparanoid.sbc.su.se/cgi-bin/faq.cgi)) and thus also requires perl to be installed. Pretty much any version should work.
 
 PyParanoid can be installed using pip simply by running
 
 ```bash
 pip install pyparanoid
 ```
+
+I do most of my work in MAC OS X so I will notate shortcuts when relevant.
 
 #### Using Homebrew :beer::beers::beers::beer:
 
@@ -39,6 +41,8 @@ brew install mcl
 brew install cd-hit
 brew install muscle
 ```
+
+Make sure that these are all located in your PATH (and that all of the executables work!)
 
 #### Manual installation
 

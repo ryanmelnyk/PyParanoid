@@ -31,6 +31,8 @@ modes: setup, parse, cluster, extract
 	parser.add_argument('--inflate', type=float,help="inflation parameter for mcl, default = 2")
 	parser.add_argument('--verbose',action="store_true",help="Print progress to STDOUT")
 	parser.add_argument('--multi',action="store_true",help="use only with mode setup and parse")
+	parser.add_argument('--use_MP',action="store_true",help="use the python multiprocessing module to dramatically speed up certain steps \
+						by utilizing multiple cores. may be unstable under Mac OS X High Sierra.")
 	return parser.parse_args()
 
 def setupdir(strains,genomedb):
@@ -165,11 +167,21 @@ def run_inparanoid(strains):
 		count = len(pairs)
 		if verbose:
 			print "Running InParanoid on", count, "pairs of strains..."
-		pool = mp.Pool(processes=cpus)
-		[pool.apply_async(IP_RUN, args=(p,)) for p in pairs]
-		pool.close()
-		pool.join()
-
+		if use_MP:
+			pool = mp.Pool(processes=cpus)
+			[pool.apply_async(IP_RUN, args=(p,)) for p in pairs]
+			pool.close()
+			pool.join()
+		else:
+			if verbose:
+				print "Sequential mode..."
+			count = len(pairs)
+			for p in pairs:
+				IP_RUN(p)
+				count -= 1
+				if verbose:
+					if count % 10 == 0:
+						print "\t"+str(count), "remaining..."
 	return
 
 def IP_RUN(p):
@@ -306,10 +318,21 @@ def parse_groups(seqdata, desc):
 def cdhit_seqs():
 	if verbose:
 		print "Clustering sequences..."
-	pool = mp.Pool(processes=cpus)
-	[pool.apply_async(CDHIT_RUN, args=(f,)) for f in os.listdir(os.path.join(outdir,"homolog_faa"))]
-	pool.close()
-	pool.join()
+	if use_MP:
+		pool = mp.Pool(processes=cpus)
+		[pool.apply_async(CDHIT_RUN, args=(f,)) for f in os.listdir(os.path.join(outdir,"homolog_faa"))]
+		pool.close()
+		pool.join()
+	else:
+		if verbose:
+			print "Sequential mode..."
+		count = len(os.listdir(os.path.join(outdir,"homolog_faa")))
+		for f in os.listdir(os.path.join(outdir,"homolog_faa")):
+			CDHIT_RUN(f)
+			count -= 1
+			if verbose:
+				if count % 100 == 0:
+					print "\t"+str(count), "remaining..."
 	return
 
 def CDHIT_RUN(f):
@@ -329,10 +352,21 @@ def align_groups():
 			continue
 		else:
 			files.append(f)
-	pool = mp.Pool(processes=cpus)
-	[pool.apply_async(ALIGN_RUN, args=(f,)) for f in files]
-	pool.close()
-	pool.join()
+	if use_MP:
+		pool = mp.Pool(processes=cpus)
+		[pool.apply_async(ALIGN_RUN, args=(f,)) for f in files]
+		pool.close()
+		pool.join()
+	else:
+		if verbose:
+			print "Sequential mode..."
+		count = len(files)
+		for f in files:
+			ALIGN_RUN(f)
+			count -= 1
+			if verbose:
+				if count % 100 == 0:
+					print "\t"+str(count), "remaining..."
 	return
 
 def ALIGN_RUN(f):
@@ -346,10 +380,21 @@ def ALIGN_RUN(f):
 def build_hmms():
 	if verbose:
 		print "Building hmms..."
-	pool = mp.Pool(processes=cpus)
-	[pool.apply_async(HMMBUILD_RUN, args=(f,)) for f in os.listdir(os.path.join(outdir, "aligned"))]
-	pool.close()
-	pool.join()
+	if use_MP:
+		pool = mp.Pool(processes=cpus)
+		[pool.apply_async(HMMBUILD_RUN, args=(f,)) for f in os.listdir(os.path.join(outdir, "aligned"))]
+		pool.close()
+		pool.join()
+	else:
+		if verbose:
+			print "Sequential mode..."
+		count = len(os.listdir(os.path.join(outdir, "aligned")))
+		for f in os.listdir(os.path.join(outdir, "aligned")):
+			ALIGN_RUN(f)
+			count -= 1
+			if verbose:
+				if count % 100 == 0:
+					print "\t"+str(count), "remaining..."
 	return
 
 def HMMBUILD_RUN(f):
@@ -363,10 +408,22 @@ def HMMBUILD_RUN(f):
 def emit_consensus_seqs():
 	if verbose:
 		print "Emitting consensus sequences..."
-	pool = mp.Pool(processes=cpus)
-	[pool.apply_async(HMMEMIT_RUN, args=(f,)) for f in os.listdir(os.path.join(outdir, "hmms"))]
-	pool.close()
-	pool.join()
+	if use_MP:
+		pool = mp.Pool(processes=cpus)
+		[pool.apply_async(HMMEMIT_RUN, args=(f,)) for f in os.listdir(os.path.join(outdir, "hmms"))]
+		pool.close()
+		pool.join()
+	else:
+		if verbose:
+			print "Sequential mode..."
+		count = len(os.listdir(os.path.join(outdir, "hmms")))
+		for f in os.listdir(os.path.join(outdir, "hmms")):
+			HMMEMIT_RUN(f)
+			count -= 1
+			if verbose:
+				if count % 100 == 0:
+					print "\t"+str(count), "remaining..."
+
 	return
 
 def HMMEMIT_RUN(f):
@@ -443,6 +500,12 @@ def main():
 		multi = True
 	else:
 		multi = False
+
+	global use_MP
+	if args.use_MP:
+		use_MP = True
+	else:
+		use_MP = False
 
 	if not args.mode or args.mode == "multi_setup":
 		setupdir(strains,genomedb)
