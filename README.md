@@ -64,7 +64,7 @@ muscle can be found [here](http://www.drive5.com/muscle/)
 
 #### Input
 
-At minimum, you can run PyParanoid using just a folder of FASTA-formatted amino acid files of indiscriminate provenance.  These should be named with a ```.faa``` file extension and stored in a folder named ```pep```.  The "genomedb" argument for ```PyParanoid.py``` and all other scripts should point to the relative location of the folder containing ```pep```.
+At minimum, you can run PyParanoid using just a folder of FASTA-formatted amino acid files of indiscriminate provenance.  These should be named with a ```.faa``` file extension and stored in a folder named ```pep```.  The "genomedb" argument for ```BuildGroups.py``` and all other scripts should point to the relative location of the folder containing ```pep```.
 
 Within the ```pep``` folder, all ```.faa``` files should have different prefixes reflecting the strain names. Underscores, letters and numbers are permitted.  Additionally, within each strain's .faa file sequence IDs should be unique.
 
@@ -86,7 +86,7 @@ Of course, this is a tradeoff between computational time and detecting novel gen
 
 ```bash
 ## Run PyParanoid to generate homology calls and models
-PyParanoid.py --clean --verbose pfl_genomeDB strainlist.txt pfl_pyp
+BuildGroups.py --clean --verbose pfl_genomeDB strainlist.txt pfl_pyp
 
 ## Propagate groups to new draft genomes
 PropagateGroups.py pfl_genomeDB prop_strainlist.txt pfl_pyp
