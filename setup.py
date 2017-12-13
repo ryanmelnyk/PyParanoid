@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(
 name='PyParanoid',
-packages = ['PyParanoid'],
+packages = ['pyparanoid'],
 scripts = ['IdentifyOrthologs.py','PropagateGroups.py','PyParanoid.py','inparanoid2.pl'],
 version='0.1',
 description='Fast and scalable homolog detection for thousands of genomes',
