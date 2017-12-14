@@ -68,11 +68,9 @@ muscle can be found [here](http://www.drive5.com/muscle/)
 
 #### Input
 
-At minimum, you can run PyParanoid using just a folder of FASTA-formatted amino acid files of indiscriminate provenance.  These should be named with a ```.faa``` file extension and stored in a folder named ```pep```.  The "genomedb" argument for ```BuildGroups.py``` and all other scripts should point to the relative location of the folder containing ```pep```.
+At minimum, you can run PyParanoid using just a folder of FASTA-formatted amino acid files of indiscriminate provenance.  These should be named with the format ```strain_name.pep.fa``` file extension and stored in a folder named ```pep```.  The "genomedb" argument for ```BuildGroups.py``` and all other scripts should point to the relative location of the folder containing ```pep```. All ```strain_name``` fields should be unique since this is the primary way that PyParanoid categorizes the strains. Underscores, letters and numbers are permitted which is generally what NCBI does when sanitizing strain names for filenames (i.e. Pseudomonas fluorescens Pf-5 becomes ```pseudomonas_fluorescens_pf_5```).  Additionally, within each strain's amino acid FASTA file file sequence IDs should be unique.
 
-Within the ```pep``` folder, all ```.faa``` files should have different prefixes reflecting the strain names. Underscores, letters and numbers are permitted.  Additionally, within each strain's .faa file sequence IDs should be unique.
-
-Alternatively, you can use some of the methods in the genomedb module within PyParanoid. Check out the ```BuildGenomeDatabase.ipynb``` notebook for details.
+Alternatively, you can use some of the methods in the genomedb module within PyParanoid. This Check out the ```BuildGenomeDatabase.ipynb``` notebook for details.
 
 PyParanoid also requires a ```strainlist.txt``` which should be a text file containing the names of the strains to include in the analysis, one per line.  These should match up with the prefixes of the amino-acid FASTA files in the ```pep``` folder.
 
