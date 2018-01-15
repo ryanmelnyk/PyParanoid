@@ -95,7 +95,7 @@ def run_diamond(strains):
 			if count == 0:
 				if verbose:
 					print "\tDone!"
-			elif count % 20 == 0:
+			elif count % 100 == 0:
 				if verbose:
 					print "\t"+str(count), "remaining..."
 			else:
@@ -134,7 +134,7 @@ def parse_diamond(genes,strains):
 		if count == 0:
 			if verbose:
 				print "\tDone!"
-		elif count % 20 == 0:
+		elif count % 100 == 0:
 			if verbose:
 				print "\t"+str(count), "remaining..."
 		else:
@@ -179,7 +179,7 @@ def run_inparanoid(strains):
 				IP_RUN(p)
 				count -= 1
 				if verbose:
-					if count % 10 == 0:
+					if count % 100 == 0:
 						print "\t"+str(count), "remaining..."
 	return
 
@@ -231,7 +231,7 @@ def create_abc_file():
 		if count == 0:
 			if verbose:
 				print "\tDone!"
-		elif count % 100 == 0:
+		elif count % 1000 == 0:
 			if verbose:
 				print "\t"+str(count), "remaining..."
 		else:
@@ -330,7 +330,7 @@ def cdhit_seqs():
 			CDHIT_RUN(f)
 			count -= 1
 			if verbose:
-				if count % 100 == 0:
+				if count % 1000 == 0:
 					print "\t"+str(count), "remaining..."
 	return
 
@@ -364,7 +364,7 @@ def align_groups():
 			ALIGN_RUN(f)
 			count -= 1
 			if verbose:
-				if count % 100 == 0:
+				if count % 1000 == 0:
 					print "\t"+str(count), "remaining..."
 	return
 
@@ -389,10 +389,10 @@ def build_hmms():
 			print "Sequential mode..."
 		count = len(os.listdir(os.path.join(outdir, "aligned")))
 		for f in os.listdir(os.path.join(outdir, "aligned")):
-			ALIGN_RUN(f)
+			HMMBUILD_RUN(f)
 			count -= 1
 			if verbose:
-				if count % 100 == 0:
+				if count % 1000 == 0:
 					print "\t"+str(count), "remaining..."
 	return
 
@@ -420,7 +420,7 @@ def emit_consensus_seqs():
 			HMMEMIT_RUN(f)
 			count -= 1
 			if verbose:
-				if count % 100 == 0:
+				if count % 1000 == 0:
 					print "\t"+str(count), "remaining..."
 
 	return
