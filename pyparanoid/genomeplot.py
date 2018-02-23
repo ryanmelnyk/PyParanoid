@@ -10,7 +10,9 @@ import matplotlib.colors as colors
 from reportlab.lib import colors as rcolors
 import numpy as np
 
-def match_seqs(fastafile,outdir):
+def match_seqs(fastafile,outdir,outfile=False):
+	if outfile:
+		o = open(outfile,'w')
 	os.system("phmmer --tblout {} {} {}".format(os.path.join(os.path.abspath(outdir),".phmmer.hits"),os.path.abspath(fastafile),os.path.join(outdir,"all_groups.faa")))
 	hit_scores = {}
 	for line in open(os.path.join(outdir,".phmmer.hits"),'r'):
@@ -18,22 +20,31 @@ def match_seqs(fastafile,outdir):
 			continue
 		else:
 			vals = line.rstrip().split()
-			hit_scores[vals[0]] = float(vals[5])
+			if vals[2] in hit_scores:
+				hit_scores[vals[2]].append((vals[0],float(vals[5])))
+			else:
+				hit_scores[vals[2]] = [(vals[0],float(vals[5]))]
 	hit_gene_lengths = {}
 	for seq in SeqIO.parse(open(os.path.join(outdir,"all_groups.faa"),'r'),'fasta'):
-		if seq.id in hit_scores:
-			hit_gene_lengths[seq.id] = len(seq.seq)
+		hit_gene_lengths[seq.id] = len(seq.seq)
 	norm_scores = {}
-	for group in hit_scores:
-		norm_scores[group] = hit_scores[group]/float(hit_gene_lengths[group])
-	for i in sorted(norm_scores.iteritems(), key=lambda (k,v): (v,k), reverse=True):
-		if i[1] > 1.0:
-			score = "Good match!"
-		if i[1] > 0.5 and i[1] < 1.0:
-			score = "Possible match..."
-		if i[1] < 0.5:
-			score = "Probably not a very good match..."
-		print i[0],round(i[1],3), score
+	for query in hit_scores:
+		norm_scores[query] = [(h[0],h[1]/float(hit_gene_lengths[h[0]])) for h in hit_scores[query]]
+
+	for s in norm_scores.keys():
+		print s
+		if outfile:
+			o.write(s+"\n")
+		for i in sorted(norm_scores[s], key=lambda (k,v): (v,k), reverse=True):
+			if i[1] > 1.0:
+				score = "Good match!"
+			if i[1] > 0.5 and i[1] < 1.0:
+				score = "Possible match..."
+			if i[1] < 0.5:
+				score = "Probably not a very good match..."
+			if outfile:
+				o.write(" ".join([str(x) for x in ["\t", i[0],round(i[1],3), score]])+"\n")
+			print "\t", i[0],round(i[1],3), score
 	return
 
 def add_group_to_tree(group,treefile,outdir,to_compress=False):
