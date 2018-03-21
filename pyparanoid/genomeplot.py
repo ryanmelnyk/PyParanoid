@@ -379,17 +379,31 @@ def get_group_dna_seqs(group, genomedb,pypdir):
 			print "{} not a valid file.".format(f)
 		else:
 			group_tags = tags[strain_names.index(strain)].split(";")
-		print strain, group_tags
 
-		# for seq in SeqIO.parse(open(os.path.join(os.path.abspath(genomedb),"gbk",g[0]+".gbk"),'r'),"genbank"):
-		# 	for feat in seq.features:
-		# 		if feat.type == "CDS":
-		# 			try:
-		# 				if feat.qualifiers["protein_id"][0] or feat.qualifiers["locus_tag"]== g[1]:
-		# 					return seq, (int(feat.location.start), int(feat.location.end))
-		# 			except KeyError:
-		# 				pass
+		for seq in SeqIO.parse(open(os.path.join(os.path.abspath(genomedb),"gbk",strain+".gbk"),'r'),"genbank"):
+			for feat in seq.features:
+				if feat.type == "CDS":
+					try:
+						if feat.qualifiers["locus_tag"][0] in group_tags:
+							if feat.strand == 1:
+								DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)]
+							elif feat.strand == -1:
+								DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)].reverse_complement()
+							o.write(">{}\n{}\n".format(strain,DNAseq))
+					except KeyError:
+						pass
+					try:
+						if feat.qualifiers["protein_id"][0] in [x.split(".")[0] for x in group_tags] or feat.qualifiers["protein_id"][0] in group_tags:
+							if feat.strand == 1:
+								DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)]
+							elif feat.strand == -1:
+								DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)].reverse_complement()
+							o.write(">{}\n{}\n".format(strain,DNAseq))
+					except KeyError:
+						pass
 
+
+	o.close()
 
 
 	return
