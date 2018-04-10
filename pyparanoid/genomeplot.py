@@ -9,6 +9,8 @@ from ete3 import Tree, TreeStyle, NodeStyle
 import matplotlib.colors as colors
 from reportlab.lib import colors as rcolors
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 def match_seqs(fastafile,outdir,outfile=False):
 	if outfile:
@@ -407,3 +409,31 @@ def get_group_dna_seqs(group, genomedb,pypdir):
 
 
 	return
+
+def plot_multigene_presence(groupfile,pypdir,tree_loc,outfile=None):
+	strains = Tree(os.path.abspath(tree_loc)).get_leaf_names()
+	## parses leaf names from tree file into a correctly ordered array
+	groups = [line.rstrip().split("\t")[0] for line in open(os.path.abspath(groupfile),'r')]
+	labels = [line.rstrip().split("\t")[1] for line in open(os.path.abspath(groupfile),'r')]
+	dat = {}
+	for g in groups:
+		present = []
+		for seq in SeqIO.parse(open(os.path.join(os.path.abspath(pypdir),"homolog_faa",g+".faa"),'r'),'fasta'):
+			if str(seq.id).split("|")[0] not in present:
+				present.append(str(seq.id).split("|")[0])
+		for seq in SeqIO.parse(open(os.path.join(os.path.abspath(pypdir),"prop_homolog_faa",g+".faa"),'r'),'fasta'):
+			if str(seq.id).split("|")[0] not in present:
+				present.append(str(seq.id).split("|")[0])
+		dat[g] = pd.Series(dict(zip(strains,[present.count(s) for s in strains])))
+	df = pd.DataFrame(dat).reindex(strains)
+	fig, ax = plt.subplots()
+	# "" for x in range(df.shape[1])
+	hm = sns.heatmap(df[groups], linewidths=0.2,cbar=False,cmap="Greens",ax=ax,square=True,xticklabels=labels,yticklabels=strains)
+	ax.yaxis.tick_right()
+	plt.yticks(rotation=0)
+	plt.xticks(rotation=-40)
+	if outfile:
+		plt.savefig(outfile,format='pdf')
+	else:
+		plt.savefig('{}.pdf'.format(os.path.basename(groupfile).split(".")[0]),format='pdf')
+	return fig
