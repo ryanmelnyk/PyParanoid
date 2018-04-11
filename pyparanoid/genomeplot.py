@@ -410,7 +410,7 @@ def get_group_dna_seqs(group, genomedb,pypdir):
 
 	return
 
-def plot_multigene_presence(groupfile,pypdir,tree_loc,outfile=None):
+def plot_multigene_presence(groupfile,pypdir,tree_loc,outfile=None,add_labels=True):
 	strains = Tree(os.path.abspath(tree_loc)).get_leaf_names()
 	## parses leaf names from tree file into a correctly ordered array
 	groups = [line.rstrip().split("\t")[0] for line in open(os.path.abspath(groupfile),'r')]
@@ -427,8 +427,10 @@ def plot_multigene_presence(groupfile,pypdir,tree_loc,outfile=None):
 		dat[g] = pd.Series(dict(zip(strains,[present.count(s) for s in strains])))
 	df = pd.DataFrame(dat).reindex(strains)
 	fig, ax = plt.subplots()
-	# "" for x in range(df.shape[1])
-	hm = sns.heatmap(df[groups], linewidths=0.2,cbar=False,cmap="Greens",ax=ax,square=True,xticklabels=labels,yticklabels=strains)
+	if add_labels:
+		hm = sns.heatmap(df[groups], linewidths=0.2,cbar=False,cmap="Greens",ax=ax,square=True,xticklabels=labels,yticklabels=strains)
+	else:
+		hm = sns.heatmap(df[groups], linewidths=0.2,cbar=False,cmap="Greens",ax=ax,square=True,xticklabels=["" for x in range(df.shape[0])],yticklabels=["" for x in range(df.shape[1])])
 	ax.yaxis.tick_right()
 	plt.yticks(rotation=0)
 	plt.xticks(rotation=-40)
