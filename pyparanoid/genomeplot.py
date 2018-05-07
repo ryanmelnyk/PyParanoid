@@ -365,49 +365,58 @@ def _change_colors(GD, groups):
 						feat.color = cl[groups[feat.name.split(".")[0]]]
 	return
 
-def get_group_dna_seqs(group, genomedb,pypdir):
+def get_group_dna_seqs(group, genomedb,pypdir,strains=False):
 	# default behavior is to get dna seqs for all strains in the genomedb/gbk folder
 	o = open("{}.fna".format(group),'w')
 	locus_mat = os.path.join(pypdir,"locustag_matrix.txt")
-	strain_names = open(locus_mat,'r').readline().rstrip().split("\t")
-	for line in open(locus_mat,'r'):
-		if line.startswith(group):
-			tags = line.rstrip().split("\t")
-			continue
 
-	for f in os.listdir(os.path.join(genomedb,"gbk")):
-		strain = f.split(".")[0]
-		if strain not in strain_names:
-			print "{} not a valid file.".format(f)
+	if strains:
+		header = open(locus_mat,'r').readline().rstrip().split("\t")
+		strain_names = [line.rstrip() for line in open(os.path.abspath(strains),'r')]
+		indices = [header.index(k) for k in strain_names]
+		for line in open(locus_mat,'r'):
+			if line.startswith(group):
+				tagline = line.rstrip().split("\t")
+				tags = [tagline[i] for i in indices]
+				continue
+
+	else:
+		strain_names = open(locus_mat,'r').readline().rstrip().split("\t")
+		for line in open(locus_mat,'r'):
+			if line.startswith(group):
+				tags = line.rstrip().split("\t")
+				continue
+
+	genbank_files = [f.split(".")[0] for f in os.listdir(os.path.join(os.path.abspath(genomedb),"gbk"))]
+
+	o = open("{}.fna".format(group),'w')
+	for strain in strain_names:
+		group_tags = tags[strain_names.index(strain)].split(";")
+		if strain not in genbank_files:
+			print "File for", strain, "not found..."
 		else:
-			group_tags = tags[strain_names.index(strain)].split(";")
-
-		for seq in SeqIO.parse(open(os.path.join(os.path.abspath(genomedb),"gbk",strain+".gbk"),'r'),"genbank"):
-			for feat in seq.features:
-				if feat.type == "CDS":
-					try:
-						if feat.qualifiers["locus_tag"][0] in group_tags:
-							if feat.strand == 1:
-								DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)]
-							elif feat.strand == -1:
-								DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)].reverse_complement()
-							o.write(">{}\n{}\n".format(strain,DNAseq))
-					except KeyError:
-						pass
-					try:
-						if feat.qualifiers["protein_id"][0] in [x.split(".")[0] for x in group_tags] or feat.qualifiers["protein_id"][0] in group_tags:
-							if feat.strand == 1:
-								DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)]
-							elif feat.strand == -1:
-								DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)].reverse_complement()
-							o.write(">{}\n{}\n".format(strain,DNAseq))
-					except KeyError:
-						pass
-
-
+			for seq in SeqIO.parse(open(os.path.join(os.path.abspath(genomedb),"gbk",strain+".gbk"),'r'),"genbank"):
+				for feat in seq.features:
+					if feat.type == "CDS":
+						try:
+							if feat.qualifiers["locus_tag"][0] in group_tags:
+								if feat.strand == 1:
+									DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)]
+								elif feat.strand == -1:
+									DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)].reverse_complement()
+								o.write(">{}\n{}\n".format(strain,DNAseq))
+						except KeyError:
+							pass
+						try:
+							if feat.qualifiers["protein_id"][0] in [x.split(".")[0] for x in group_tags] or feat.qualifiers["protein_id"][0] in group_tags:
+								if feat.strand == 1:
+									DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)]
+								elif feat.strand == -1:
+									DNAseq = seq.seq[int(feat.location.start):int(feat.location.end)].reverse_complement()
+								o.write(">{}\n{}\n".format(strain,DNAseq))
+						except KeyError:
+							pass
 	o.close()
-
-
 	return
 
 def plot_multigene_presence(groupfile,pypdir,tree_loc,outfile=None,add_labels=True):
