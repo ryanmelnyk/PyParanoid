@@ -213,7 +213,7 @@ def add_Prokka_genome(outdir,prokka,species_id,taxid="2"):
 					contigcount += 1
 				stats['basecount'] = basecount
 				stats['contigcount'] = contigcount
-				shutil.copy(os.path.join(prokka,f),os.path.join(outdir,"dna","{}.dna.fa".format(species_id)))
+				shutil.copy(os.path.join(prokka,f),os.path.join(outdir,"dna","{}.fna".format(species_id)))
 			elif f.endswith(".gbk"):
 				shutil.copy(os.path.join(prokka,f),os.path.join(outdir,"gbk","{}.gbk".format(species_id)))
 			else:
@@ -449,6 +449,97 @@ def download_genbank_files(strains,genomedb):
 							ens.retrbinary("RETR " + g, gbk.write)
 							gbk.close()
 							cmds = ["gunzip",os.path.join(genomedb,"gbk","{}.gbk.gz".format(species))]
+							proc = subprocess.Popen(cmds)
+							proc.wait()
+							r_count += 1
+			ens.close()
+
+	e_tot = 0
+	for e in ensembl:
+		e_tot += len(ensembl[e])
+	print p_count,"of", len(prokka), "prokka genbank files available."
+	print e_count,"of", e_tot, "Ensembl genbank files available."
+	print r_count, "of", len(refseq), "refseq files available."
+	return
+
+def download_dna_files(strains,genomedb):
+	prokka = []
+	refseq = []
+	ensembl = {}
+	for line in open(os.path.join(genomedb,"genome_metadata.txt")):
+		vals = line.rstrip().split("\t")
+		if vals[2] in strains:
+			if vals[6].startswith("ensembl"):
+				rel = "-".join(vals[6].split("-")[1:])
+				if rel not in ensembl:
+					ensembl[rel] = [vals[2]]
+				else:
+					ensembl[rel].append(vals[2])
+			elif vals[6].startswith("NCBI"):
+				refseq.append((vals[0],vals[2]))
+			elif vals[6].startswith("prokka"):
+				prokka.append((vals[0],vals[2]))
+			else:
+				pass
+
+	p_count = 0
+	for p in prokka:
+		if os.path.exists(os.path.join(genomedb,"dna",p[1]+".fna")):
+			pass
+			p_count += 1
+		else:
+			print "Fasta file from prokka assembly",p[1], "not found..."
+
+	ens = ftplib.FTP('ftp.ensemblgenomes.org')
+	ens.login()
+	e_count = 0
+	for e in ensembl:
+		if e == "release-32":
+			for strain in ensembl[e]:
+				print "release-32 outdated...skipping",strain
+		else:
+			for line in open(os.path.join(genomedb,"{}.txt".format(e)),'r'):
+				vals = line.rstrip().split("\t")
+				if vals[6] in ensembl[e]:
+					if os.path.exists(os.path.join(genomedb,"dna",vals[6]+".fna")):
+						e_count += 1
+					else:
+						wd = '/pub/{}/bacteria/genbank/{}_collection/{}'.format(e,"_".join(vals[5].split("_")[0:2]),vals[6])
+						ens.cwd(wd)
+
+						for filepath in ens.nlst():
+							if filepath.endswith(".dna.toplevel.fa.gz"):
+								o = open(os.path.join(genomedb,"dna",vals[6]+'.fna.gz'),'wb')
+								ens.retrbinary("RETR " + filepath, o.write)
+								o.close()
+								cmds = ["gunzip",os.path.join(genomedb,"dna",vals[6]+'.fna.gz')]
+								proc = subprocess.Popen(cmds)
+								proc.wait()
+						e_count += 1
+				else:
+					pass
+	ens.close()
+
+	r_count = 0
+	for r in refseq:
+		if os.path.exists(os.path.join(genomedb,"dna",r[1]+".fna")):
+			r_count += 1
+		else:
+			assembly = r[0].split("_")[1]
+			species = r[1]
+			ens = ftplib.FTP('ftp.ncbi.nlm.nih.gov')
+			ens.login()
+			ens.cwd("/genomes/all/GCF/{}/{}/{}".format(assembly[0:3],assembly[3:6], assembly[6:9]))
+			for f in ens.nlst():
+				if f.split("_")[1] == assembly:
+					ens.cwd(f)
+					for g in ens.nlst():
+						if g.endswith("_genomic.fna.gz"):
+							filepath = os.path.join(genomedb,"dna","{}.fna.gz".format(species))
+							dna = open(filepath,'wb')
+							ens.retrbinary("RETR " + g, dna.write)
+							dna.close()
+							cmds = ["gunzip",os.path.join(genomedb,"dna","{}.fna.gz".format(species))]
 							proc = subprocess.Popen(cmds)
 							proc.wait()
 							r_count += 1
