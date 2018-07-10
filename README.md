@@ -116,4 +116,4 @@ Check them out in the ```analysis_ipython``` folder.  They all depend on my loca
 
 ## Citing PyParanoid
 
-if you're reading this I'm still working on a manuscript containing PyParanoid so just cite this github page.
+A [manuscript describing PyParanoid](https://www.biorxiv.org/content/early/2018/06/12/345488) is availabe on bioRxiv where I used it to study the evolution of pathogenesis and commensalism in plant-associated *Pseudomonas* spp.
