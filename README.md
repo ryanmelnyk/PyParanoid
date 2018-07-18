@@ -1,10 +1,9 @@
 # PyParanoid
 
-**Ryan Melnyk**  
-**[Haney Lab - University of British Columbia](https://haneylab.msl.ubc.ca/)**  
-**v0.2.1 - release December 13, 2017**
+**Ryan Melnyk**   
+**v0.2.2**
 
-***ryan.melnyk@msl.ubc.ca***  
+***ramelnyk@ucdavis.edu***  
 ***schmelnyk@gmail.com***
 
 ![PyParanoid pipeline](src/pipeline.png "PyParanoid pipeline")
@@ -116,4 +115,4 @@ Check them out in the ```analysis_ipython``` folder.  They all depend on my loca
 
 ## Citing PyParanoid
 
-A [manuscript describing PyParanoid](https://www.biorxiv.org/content/early/2018/06/12/345488) is availabe on bioRxiv where I used it to study the evolution of pathogenesis and commensalism in plant-associated *Pseudomonas* spp.
+A [manuscript describing PyParanoid](https://www.biorxiv.org/content/early/2018/06/12/345488) is available on bioRxiv where I used it to study the evolution of pathogenesis and commensalism in plant-associated *Pseudomonas* spp.
