@@ -16,13 +16,15 @@ def check_db(outdir):
 	if "genome_metadata.txt" not in os.listdir(outdir):
 		pass
 	else:
-		for line in open(os.path.join(outdir,"genome_metadata.txt"),'r'):
+		o = open(os.path.join(outdir,"genome_metadata.txt"),'r')
+		for line in o:
 			if line.startswith("assembly_id"):
 				continue
 			else:
 				vals = line.rstrip().split("\t")
 				assemblies.append(vals[0])
 				species_tags.append(vals[2])
+		o.close()
 
 
 	return assemblies, species_tags
@@ -241,15 +243,22 @@ def download_Refseq_files(outdir,cpus=1,names=False,taxids=False):
 				print "Downloading files for {}...".format(name)
 				for f in files:
 					print "\tworking on {} files...".format(f)
-					ngd.download(group="bacteria",genus=name,file_format=f,section="refseq",output=outdir,parallel=cpus)
+					if cpus == 1:
+						ngd.download(group="bacteria",genus=name,file_format=f,section="refseq",output=outdir)
+					else:
+						ngd.download(group="bacteria",genus=name,file_format=f,section="refseq",output=outdir,parallel=cpus)
 		if taxids:
 			for taxid in taxids.split(","):
 				print "Downloading files for {}...".format(str(taxid))
 				for f in files:
 					print "\tworking on {} files...".format(f)
-					ngd.download(group="bacteria",taxid=taxid,file_format=f,section="refseq",output=outdir,parallel=cpus)
+					if cpus == 1:
+						ngd.download(group="bacteria",taxid=taxid,file_format=f,section="refseq",output=outdir)
+					else:
+						ngd.download(group="bacteria",taxid=taxid,file_format=f,section="refseq",output=outdir,parallel=cpus)
 		process_Refseq(outdir,assemblies,species_tags)
-		shutil.rmtree(os.path.join(outdir,"refseq"))
+		if os.path.exists(os.path.join(outdir,"refseq")):
+			shutil.rmtree(os.path.join(outdir,"refseq"))
 	return
 
 def process_Refseq(outdir,assemblies,species_tags):
@@ -288,13 +297,10 @@ def process_Refseq(outdir,assemblies,species_tags):
 						total_length = 0
 						contig_count = 0
 
-						### DNA download commented out
-						# o = open(os.path.join(outdir,"pep",orgname+".pep.fa"),'w')
 						for seq in SeqIO.parse(open(os.path.join(outdir,"refseq","bacteria",f,g),'r'),'fasta'):
 							total_length += len(str(seq.seq))
-							# SeqIO.write(seq,o,'fasta')
 							contig_count += 1
-						# o.close()
+
 					if g.endswith(".faa"):
 						o = open(os.path.join(outdir,"pep",orgname+".pep.fa"),'w')
 						gene_count = 0

@@ -11,6 +11,7 @@ from reportlab.lib import colors as rcolors
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from itertools import combinations
 
 def match_seqs(fastafile,outdir,outfile=False):
 	if outfile:
@@ -448,3 +449,46 @@ def plot_multigene_presence(groupfile,pypdir,tree_loc,outfile=None,add_labels=Tr
 	else:
 		plt.savefig('{}.pdf'.format(os.path.basename(groupfile).split(".")[0]),format='pdf')
 	return fig
+
+
+def select_rep_genomes(genomedb,treefile,threshold=0.01,output="rep_strains.txt"):
+	t = Tree(os.path.abspath(treefile))
+	o = open(os.path.abspath(output),'w')
+	good_strains = []
+	to_skip = []
+
+	strains = [x.name for x in t.get_leaves()]
+	contigs = {}
+	for line in open(os.path.join(genomedb,"genome_metadata.txt"),'r'):
+		if line.startswith("assembly_id"):
+			continue
+		else:
+			vals = line.rstrip().split("\t")
+			if vals[2] in strains:
+				contigs[vals[2]] = int(vals[4])
+
+	for node in t.iter_descendants("preorder"):
+
+		if node in to_skip:
+			continue
+		else:
+			leafnodes = [x for x in node.get_leaves()]
+			if len(leafnodes) > 100:
+				continue
+			else:
+				if len(leafnodes) > 1:
+					pairs = [p for p in combinations(leafnodes,2)]
+					dist = 0.0
+					for p in pairs:
+						dist += node.get_distance(p[0],p[1])
+					if dist/len(pairs) < threshold:
+						leafnodes.sort(key = lambda x: contigs[x.name])
+						good_strains.append(leafnodes[0].name)
+						[to_skip.append(desc) for desc in node.iter_descendants("preorder")]
+				if node.is_leaf():
+					good_strains.append(node.name)
+
+	print len(good_strains), "at threshold", threshold
+	o.write("\n".join(good_strains))
+	o.close()
+	return

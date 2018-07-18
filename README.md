@@ -34,7 +34,7 @@ I do most of my work in MAC OS X so I will notate shortcuts when relevant.
 OSX users can install these dependencies easily using [Homebrew](https://brew.sh/) and running the following commands.
 
 ```
-brew tap homebrew/science
+brew tap brewsci/bio
 brew install diamond
 brew install hmmer
 brew install mcl
