@@ -1,10 +1,8 @@
-from Bio import SeqIO
+from Bio import SeqIO, GenBank
 from Bio.Graphics import GenomeDiagram
-from Bio import GenBank
 from Bio.SeqFeature import FeatureLocation
 import seaborn as sns
-import random
-import argparse, os, sys, math
+import argparse, os, sys, math, random
 from ete3 import Tree, TreeStyle, NodeStyle
 import matplotlib.colors as colors
 from reportlab.lib import colors as rcolors

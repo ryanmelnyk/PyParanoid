@@ -7,8 +7,7 @@ import datetime
 import shutil
 import sys
 from urllib import urlopen
-from Bio import SeqIO
-from Bio import Entrez
+from Bio import SeqIO, Entrez
 import ncbi_genome_download as ngd
 
 def check_db(outdir):
