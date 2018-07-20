@@ -25,7 +25,6 @@ def check_db(outdir):
 				species_tags.append(vals[2])
 		o.close()
 
-
 	return assemblies, species_tags
 
 def setupdirs(outdir):
@@ -56,10 +55,12 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 			o = open(os.path.join(outdir,"{}.txt".format(j)),'w')
 			break
 
-	fields = ["assembly_id",'assembly_level','base_count','name', 'strain', 'dbname','species','taxonomy_id','contigs','protein_coding_genes']
+	fields = ["assembly_id",'assembly_level','base_count','name', 'strain',\
+			  'dbname','species','taxonomy_id','contigs','protein_coding_genes']
 	o.write("\t".join(fields)+"\n")
 
-	items = ijson.items(urlopen("ftp://ftp.ensemblgenomes.org/{}/species_metadata_EnsemblBacteria.json".format(ens.pwd())),'item')
+	items = ijson.items(urlopen("ftp://ftp.ensemblgenomes.org/{}/species_metadata_EnsemblBacteria.json"
+								.format(ens.pwd())),'item')
 	count = 0
 	genomes = {}
 
@@ -68,36 +69,44 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 		count += 1
 
 		thisline = []
-		thisline.append(js["assembly_id"])
-		for feat in ['assembly_level','base_count','name', 'strain', 'dbname','species','taxonomy_id']:
-			thisline.append(js[feat])
-		thisline.append(str(len(js["sequences"])))
+		for feat in ["assembly_accession",'assembly_level','base_count']:
+			thisline.append(js['assembly'][feat])
+
+		for feat in ['display_name', 'strain']:
+			thisline.append(js['organism'][feat])
+
+		thisline.append(js["core"]["dbname"])
+
+		for feat in ['name', 'taxonomy_id']:
+			thisline.append(js['organism'][feat])
+
+		thisline.append(str(len(js["assembly"]["sequences"])))
 		thisline.append(js["annotations"]["nProteinCoding"])
 
-		fields = js['species'].split("_")
+		fields = js['organism']['name'].split("_")
 
 		if names:
 			for n in names.split(","):
 				if n in fields:
-					if js["species"] not in species_tags:
+					if js['organism']['name'] not in species_tags:
 						if complete:
-							if js["assembly_level"] == "chromosome":
+							if js["assembly"]["assembly_level"] == "chromosome":
 								genomes = get_data(genomes,js)
 						else:
 							genomes = get_data(genomes,js)
 		if taxids:
-			if str(js['taxonomy_id']) in taxids:
-				if js['species'] not in species_tags:
+			if str(js['organism']['taxonomy_id']) in taxids:
+				if js['organism']['name'] not in species_tags:
 					if complete:
-						if js["assembly_level"] == "chromosome":
+						if js["assembly"]["assembly_level"] == "chromosome":
 							genomes = get_data(genomes,js)
 					else:
 						genomes = get_data(genomes,js)
 
 		if not (names or taxids):
-			if js['species'] not in species_tags:
+			if js['organism']['name'] not in species_tags:
 				if complete:
-					if js["assembly_level"] == "chromosome":
+					if js['assembly']["assembly_level"] == "chromosome":
 						genomes = get_data(genomes,js)
 				else:
 					genomes = get_data(genomes,js)
@@ -108,7 +117,8 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 			print "\t", count, "JSON records parsed."
 		if maxgen is not None:
 			if len(genomes.keys()) == maxgen:
-				print "{} new genomes to download found...exiting JSON parser...".format(str(len(genomes.keys())))
+				print "{} new genomes to download found...exiting JSON parser..."\
+					.format(str(len(genomes.keys())))
 				break
 
 	print "\t",count, "total JSON records parsed..."
@@ -121,14 +131,18 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 	Ensembl_ftp(genomes,outdir)
 	return
 
-
 def get_data(genomes,js):
-	if js["assembly_id"] not in genomes:
-		genomes[js["assembly_id"]] = {}
-		for feat in ['assembly_level','base_count','name', 'strain', 'dbname','species','taxonomy_id']:
-			genomes[js["assembly_id"]][feat] = js[feat]
-		genomes[js["assembly_id"]]['contigs'] = len(js["sequences"])
-		genomes[js["assembly_id"]]['ngenes'] = js["annotations"]["nProteinCoding"]
+	if js["assembly"]["assembly_accession"] not in genomes:
+		genomes[js["assembly"]["assembly_accession"]] = {}
+		for feat in ['assembly_level','base_count']:
+			genomes[js["assembly"]["assembly_accession"]][feat] = js['assembly'][feat]
+
+		for feat in ['display_name', 'strain','name','taxonomy_id']:
+			genomes[js["assembly"]["assembly_accession"]][feat] = js['organism'][feat]
+
+		genomes[js["assembly"]["assembly_accession"]]['dbname'] = js["core"]["dbname"]
+		genomes[js["assembly"]["assembly_accession"]]['contigs'] = len(js["assembly"]["sequences"])
+		genomes[js["assembly"]["assembly_accession"]]['ngenes'] = js["annotations"]["nProteinCoding"]
 	return genomes
 
 def Ensembl_ftp(fg, outdir):
@@ -145,17 +159,13 @@ def Ensembl_ftp(fg, outdir):
 		o = open(os.path.join(outdir,"genome_metadata.txt"),'a')
 	for f in fg:
 		try:
-			ens.cwd("/pub/bacteria/current/fasta/{}/{}/pep".format("_".join(fg[f]["dbname"].split("_")[0:3]),fg[f]["species"]))
+			ens.cwd("/pub/bacteria/current/fasta/{}/{}/pep".format("_".join(fg[f]["dbname"].split("_")[0:3]),fg[f]["name"]))
 			for filepath in ens.nlst():
 				if filepath.endswith(".pep.all.fa.gz"):
-					download_and_unzip(ens,filepath,os.path.join(outdir,"pep",fg[f]["species"]+".pep.fa.gz"))
-			### dna download section
-			# ens.cwd("../dna")
-			# for filepath in ens.nlst():
-			# 	if filepath.endswith(".dna.toplevel.fa.gz"):
-			# 		download_and_unzip(ens,filepath,os.path.join(outdir,"dna",fg[f]["species"]+".dna.fa.gz"))
+					download_and_unzip(ens,filepath,os.path.join(outdir,"pep",fg[f]["name"]+".pep.fa.gz"))
+
 			vals = [f]
-			for key in ["base_count", "species", "taxonomy_id", "contigs","ngenes"]:
+			for key in ["base_count", "name", "taxonomy_id", "contigs","ngenes"]:
 				vals.append(fg[f][key])
 			vals.append("ensembl-"+fg[f]["version"])
 			vals.append(datetime.datetime.now())
@@ -513,7 +523,6 @@ def download_dna_files(strains,genomedb):
 						ens.cwd(wd)
 
 						for filepath in ens.nlst():
-							print filepath
 							if filepath.endswith(".dna.toplevel.fa.gz"):
 								o = open(os.path.join(genomedb,"dna",vals[6]+'.fna.gz'),'wb')
 								ens.retrbinary("RETR " + filepath, o.write)
