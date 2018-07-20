@@ -464,7 +464,7 @@ def download_genbank_files(strains,genomedb):
 		e_tot += len(ensembl[e])
 	print p_count,"of", len(prokka), "prokka genbank files available."
 	print e_count,"of", e_tot, "Ensembl genbank files available."
-	print r_count, "of", len(refseq), "refseq files available."
+	print r_count, "of", len(refseq), "refseq genbank files available."
 	return
 
 def download_dna_files(strains,genomedb):
@@ -509,10 +509,11 @@ def download_dna_files(strains,genomedb):
 					if os.path.exists(os.path.join(genomedb,"dna",vals[6]+".fna")):
 						e_count += 1
 					else:
-						wd = '/pub/{}/bacteria/genbank/{}_collection/{}'.format(e,"_".join(vals[5].split("_")[0:2]),vals[6])
+						wd = '/pub/{}/bacteria/fasta/{}_collection/{}/dna'.format(e,"_".join(vals[5].split("_")[0:2]),vals[6])
 						ens.cwd(wd)
 
 						for filepath in ens.nlst():
+							print filepath
 							if filepath.endswith(".dna.toplevel.fa.gz"):
 								o = open(os.path.join(genomedb,"dna",vals[6]+'.fna.gz'),'wb')
 								ens.retrbinary("RETR " + filepath, o.write)
@@ -553,7 +554,7 @@ def download_dna_files(strains,genomedb):
 	e_tot = 0
 	for e in ensembl:
 		e_tot += len(ensembl[e])
-	print p_count,"of", len(prokka), "prokka genbank files available."
-	print e_count,"of", e_tot, "Ensembl genbank files available."
-	print r_count, "of", len(refseq), "refseq files available."
+	print p_count,"of", len(prokka), "prokka DNA files available."
+	print e_count,"of", e_tot, "Ensembl DNA files available."
+	print r_count, "of", len(refseq), "refseq DNA files available."
 	return
