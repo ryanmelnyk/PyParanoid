@@ -12,6 +12,19 @@ import ncbi_genome_download as ngd
 
 def check_db(outdir):
 	assemblies,species_tags = [],[]
+	if os.path.isdir(outdir):
+		pass
+	else:
+		print os.path.abspath(outdir), "doesn't exist! Run gdb.setupdirs() first."
+		sys.exit()
+
+	for f in ["pep","dna","gbk"]:
+		if os.path.isdir(os.path.join(outdir,f)):
+			pass
+		else:
+			print os.path.abspath(os.path.join(outdir,f)), "doesn't exist! Run gdb.setupdirs() first."
+			sys.exit()
+
 	if "genome_metadata.txt" not in os.listdir(outdir):
 		pass
 	else:
@@ -52,97 +65,104 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 	for j in ens.pwd().split("/"):
 		if j.startswith("release"):
 			print "Current release of EnsemblBacteria:", j
-			o = open(os.path.join(outdir,"{}.txt".format(j)),'w')
 			break
 
-	fields = ["assembly_id",'assembly_level','base_count','name', 'strain',\
-			  'dbname','species','taxonomy_id','contigs','protein_coding_genes']
-	o.write("\t".join(fields)+"\n")
+	if j+".txt" not in os.listdir(outdir):
+		o = open(os.path.join(outdir,"{}.txt".format(j)),'w')
+		fields = ["assembly_id",'assembly_level','base_count','name', 'strain',\
+				  'dbname','species','taxonomy_id','contigs','protein_coding_genes']
+		o.write("\t".join(fields)+"\n")
 
-	items = ijson.items(urlopen("ftp://ftp.ensemblgenomes.org/{}/species_metadata_EnsemblBacteria.json"
-								.format(ens.pwd())),'item')
-	count = 0
+		items = ijson.items(urlopen("ftp://ftp.ensemblgenomes.org/{}/species_metadata_EnsemblBacteria.json"
+									.format(ens.pwd())),'item')
+		count = 0
+		for js in items:
+			count += 1
+
+			thisline = []
+			for feat in ["assembly_accession",'assembly_level','base_count']:
+				thisline.append(js['assembly'][feat])
+			for feat in ['display_name', 'strain']:
+				thisline.append(js['organism'][feat])
+			thisline.append(js["core"]["dbname"])
+			for feat in ['name', 'taxonomy_id']:
+				thisline.append(js['organism'][feat])
+			thisline.append(str(len(js["assembly"]["sequences"])))
+			thisline.append(js["annotations"]["nProteinCoding"])
+
+			o.write("\t".join([str(x) for x in thisline])+"\n")
+
+			if count % 10000 == 0:
+				print "\t", count, "JSON records parsed."
+		print "\t",count, "total JSON records parsed..."
+		o.close()
+	else:
+		print j+".txt", "found in", outdir+"...parsing..."
+	ens.close()
+
 	genomes = {}
-
 	found = 0
-	for js in items:
-		count += 1
+	for line in open(os.path.join(outdir,j+".txt"),'r'):
+		if line.startswith("assembly_id"):
+			continue
+		else:
+			vals = line.rstrip().split("\t")
 
-		thisline = []
-		for feat in ["assembly_accession",'assembly_level','base_count']:
-			thisline.append(js['assembly'][feat])
-
-		for feat in ['display_name', 'strain']:
-			thisline.append(js['organism'][feat])
-
-		thisline.append(js["core"]["dbname"])
-
-		for feat in ['name', 'taxonomy_id']:
-			thisline.append(js['organism'][feat])
-
-		thisline.append(str(len(js["assembly"]["sequences"])))
-		thisline.append(js["annotations"]["nProteinCoding"])
-
-		fields = js['organism']['name'].split("_")
+		fields = vals[6].split("_")
 
 		if names:
 			for n in names.split(","):
 				if n in fields:
-					if js['organism']['name'] not in species_tags:
+					if (vals[6] not in species_tags) and (vals[0] not in assemblies):
 						if complete:
-							if js["assembly"]["assembly_level"] == "chromosome":
-								genomes = get_data(genomes,js)
+							if vals[1] == "chromosome":
+								genomes = get_data(genomes,vals)
 						else:
-							genomes = get_data(genomes,js)
-		if taxids:
-			if str(js['organism']['taxonomy_id']) in taxids:
-				if js['organism']['name'] not in species_tags:
+							genomes = get_data(genomes,vals)
+		elif taxids:
+			if str(vals[7]) in taxids:
+				if (vals[6] not in species_tags) and (vals[0] not in assemblies):
 					if complete:
-						if js["assembly"]["assembly_level"] == "chromosome":
-							genomes = get_data(genomes,js)
+						if vals[1] == "chromosome":
+							genomes = get_data(genomes,vals)
 					else:
-						genomes = get_data(genomes,js)
-
-		if not (names or taxids):
-			if js['organism']['name'] not in species_tags:
+						genomes = get_data(genomes,vals)
+		elif not (names or taxids):
+			if (vals[6] not in species_tags) and (vals[0] not in assemblies):
 				if complete:
-					if js['assembly']["assembly_level"] == "chromosome":
-						genomes = get_data(genomes,js)
+					if vals[1] == "chromosome":
+						genomes = get_data(genomes,vals)
 				else:
-					genomes = get_data(genomes,js)
+					genomes = get_data(genomes,vals)
+		else:
+			pass
 
-		o.write("\t".join([str(x) for x in thisline])+"\n")
-
-		if count % 10000 == 0:
-			print "\t", count, "JSON records parsed."
 		if maxgen is not None:
 			if len(genomes.keys()) == maxgen:
-				print "{} new genomes to download found...exiting JSON parser..."\
+				print "\tMaximum of {} genomes reached..."\
 					.format(str(len(genomes.keys())))
 				break
 
-	print "\t",count, "total JSON records parsed..."
 	print len(assemblies), "found in", os.path.basename(outdir)+"."
-	print len(genomes), "remaining to download."
-	ens.close()
-	o.close()
+	print len(genomes), "genomes in queue to download..."
+
 	for g in genomes:
 		genomes[g]["version"] = j
 	Ensembl_ftp(genomes,outdir)
 	return
 
-def get_data(genomes,js):
-	if js["assembly"]["assembly_accession"] not in genomes:
-		genomes[js["assembly"]["assembly_accession"]] = {}
-		for feat in ['assembly_level','base_count']:
-			genomes[js["assembly"]["assembly_accession"]][feat] = js['assembly'][feat]
-
-		for feat in ['display_name', 'strain','name','taxonomy_id']:
-			genomes[js["assembly"]["assembly_accession"]][feat] = js['organism'][feat]
-
-		genomes[js["assembly"]["assembly_accession"]]['dbname'] = js["core"]["dbname"]
-		genomes[js["assembly"]["assembly_accession"]]['contigs'] = len(js["assembly"]["sequences"])
-		genomes[js["assembly"]["assembly_accession"]]['ngenes'] = js["annotations"]["nProteinCoding"]
+def get_data(genomes,vals):
+	if vals[0] not in genomes:
+		genomes[vals[0]] = {}
+		genomes[vals[0]]['assembly_level'] = vals[1]
+		genomes[vals[0]]['base_count'] = vals[2]
+		genomes[vals[0]]['display_name'] = vals[3]
+		genomes[vals[0]]['strain'] = vals[4]
+		genomes[vals[0]]['dbname'] = vals[5]
+		genomes[vals[0]]['name'] = vals[6]
+		genomes[vals[0]]['taxonomy_id'] = vals[7]
+		genomes[vals[0]]['contigs'] = vals[8]
+		genomes[vals[0]]['ngenes'] = vals[9]
 	return genomes
 
 def Ensembl_ftp(fg, outdir):
@@ -189,7 +209,6 @@ def download_and_unzip(ftp,f,outfile):
 	proc = subprocess.Popen(cmds)
 	proc.wait()
 	return
-
 
 def check_unique(species_id,outdir):
 	strains = []
