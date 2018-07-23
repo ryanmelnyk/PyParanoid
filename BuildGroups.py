@@ -43,6 +43,14 @@ def setupdir(strains,genomedb):
 
 	pp.createdirs(outdir, ["faa","m8","out","paranoid_output","dmnd_tmp"])
 
+	if not os.path.isdir(genomedb):
+		print "GenomeDB folder", genomedb, "doesn't exist...exiting."
+		sys.exit()
+
+	if not os.path.isdir(os.path.join(genomedb,"pep")):
+		print "GenomeDB folder is missing a 'pep' folder...exiting."
+		sys.exit()
+
 	if verbose:
 		print "Formatting",len(strains), "fasta files..."
 	for s in strains:
