@@ -424,15 +424,15 @@ def plot_multigene_presence(groupfile,pypdir,tree_loc,outfile=None,add_labels=Tr
 	groups = [line.rstrip().split("\t")[0] for line in open(os.path.abspath(groupfile),'r')]
 	labels = [line.rstrip().split("\t")[1] for line in open(os.path.abspath(groupfile),'r')]
 	dat = {}
-	for g in groups:
-		present = []
-		for seq in SeqIO.parse(open(os.path.join(os.path.abspath(pypdir),"homolog_faa",g+".faa"),'r'),'fasta'):
-			if str(seq.id).split("|")[0] not in present:
-				present.append(str(seq.id).split("|")[0])
-		for seq in SeqIO.parse(open(os.path.join(os.path.abspath(pypdir),"prop_homolog_faa",g+".faa"),'r'),'fasta'):
-			if str(seq.id).split("|")[0] not in present:
-				present.append(str(seq.id).split("|")[0])
-		dat[g] = pd.Series(dict(zip(strains,[present.count(s) for s in strains])))
+
+
+	header = open(os.path.join(pypdir,"homolog_matrix.txt"),'r').readline().split("\t")
+	indices = [header.index(s) for s in strains]
+	for line in open(os.path.join(pypdir,"homolog_matrix.txt"),'r'):
+		vals = line.rstrip().split("\t")
+		if vals[0] in groups:
+			dat[vals[0]] = pd.Series(dict(zip(strains,[int(vals[i]) for i in indices])))
+
 	df = pd.DataFrame(dat).reindex(strains)
 	fig, ax = plt.subplots()
 	if add_labels:
