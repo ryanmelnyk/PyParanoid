@@ -564,6 +564,7 @@ def main():
 			pp.cleanup(os.path.join(outdir,"faa"))
 			pp.cleanup(os.path.join(outdir,"homolog_faa"))
 			pp.cleanup(os.path.join(outdir,"mcl"))
+			os.remove(os.path.join(outdir,"all_strains.dmnd"))
 		pp.dump_matrices(outdir)
 
 
