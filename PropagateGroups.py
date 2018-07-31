@@ -178,11 +178,11 @@ def parse_inparanoid(new_strains):
 	return group_members
 
 def extract_fastas(genes,group_members):
+	o = open(os.path.join(outdir,"prop_homolog.faa"),'a')
 	for g in group_members:
-		o = open(os.path.join(outdir,"prop_homolog_faa",g.split("-")[0]+".faa"),'a')
 		for h in group_members[g]:
-			o.write(">{}\n{}\n".format(h,genes[h.split("|")[0]][h]))
-		o.close()
+			o.write(">{}|{}\n{}\n".format(h,g.split("-")[0],genes[h.split("|")[0]][h]))
+	o.close()
 	return
 
 def main():
@@ -216,7 +216,7 @@ def main():
 	group_members = parse_inparanoid(new_strains)
 	extract_fastas(genes,group_members)
 	pp.dump_matrices(outdir)
-	for f in ["prop_m8","prop_out","prop_dmnd","prop_paranoid_output","prop_faa"]:
+	for f in ["prop_m8","prop_out","prop_dmnd","prop_paranoid_output","prop_faa","prop_homolog_faa"]:
 		pp.cleanup(os.path.join(outdir,f))
 
 

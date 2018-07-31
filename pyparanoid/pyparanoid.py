@@ -96,29 +96,39 @@ def dump_matrices(outdir):
 	o_loc.write("\t{}\n".format("\t".join(strains)))
 	o_hom.write("\t{}\n".format("\t".join(strains)))
 
-	for f in sorted(os.listdir(os.path.join(outdir,"homolog_faa"))):
-		hits = {s : [] for s in strains}
-		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_faa",f),'r'),'fasta'):
-			hits[seq.id.split("|")[0]].append(seq.id.split("|")[1])
-		try:
-			for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog_faa",f),'r'),'fasta'):
-				hits[seq.id.split("|")[0]].append(seq.id.split("|")[1])
-		except IOError:
-			pass
+	groups = {}
+	for seq in SeqIO.parse(open(os.path.join(outdir,"homolog.faa"),'r'),'fasta'):
+		vals = str(seq.id).split("|")
+		if vals[2] not in groups:
+			groups[vals[2]] = {s : [] for s in strains}
+		groups[vals[2]][vals[0]].append(vals[1])
+	try:
+		for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog.faa"),'r'),'fasta'):
+			vals = str(seq.id).split("|")
+			if vals[2] not in groups:
+				groups[vals[2]] = {s : [] for s in strains}
+			groups[vals[2]][vals[0]].append(vals[1])
+	except IOError:
+		pass
+
+	for g in sorted(groups.keys()):
 		thisline = []
 		counts = []
 		for s in strains:
-			if len(hits[s]) == 0:
+			if len(groups[g][s]) == 0:
 				thisline.append("None")
 				counts.append("0")
-			elif len(hits[s]) == 1:
-				thisline.append(hits[s][0])
+			elif len(groups[g][s]) == 1:
+				thisline.append(groups[g][s][0])
 				counts.append("1")
 			else:
-				thisline.append(";".join(hits[s]))
-				counts.append(str(len(hits[s])))
-		o_loc.write("{}\t{}\n".format(f.split(".")[0],"\t".join(thisline)))
-		o_hom.write("{}\t{}\n".format(f.split(".")[0],"\t".join(counts)))
+				thisline.append(";".join(groups[g][s]))
+				counts.append(str(len(groups[g][s])))
+		o_loc.write("{}\t{}\n".format(g,"\t".join(thisline)))
+		o_hom.write("{}\t{}\n".format(g,"\t".join(counts)))
+	o_loc.close()
+	o_hom.close()
+
 	return
 
 def parse_matrix(outdir):

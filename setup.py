@@ -7,7 +7,7 @@ setup(
 name='PyParanoid',
 packages = ['pyparanoid'],
 scripts = ['IdentifyOrthologs.py','PropagateGroups.py','BuildGroups.py','inparanoid2.pl'],
-version='0.2.3dev',
+version='0.3dev',
 description='Fast and scalable homolog detection for thousands of genomes',
 long_description='PyParanoid is a set of scripts and functions for identifying homology groups in large databases of microbial genomes. See https://github.com/ryanmelnyk/PyParanoid for details.',
 author='Ryan A. Melnyk',

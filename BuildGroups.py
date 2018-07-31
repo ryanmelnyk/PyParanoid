@@ -204,15 +204,12 @@ def hash_fastas():
 	for f in os.listdir(os.path.join(outdir,"faa")):
 		for seq in SeqIO.parse(open(os.path.join(outdir,"faa",f),'r'),'fasta'):
 			seqdata[str(seq.id)] = str(seq.seq)
-			vals = str(seq.description).split()
-			if vals[2].startswith("pep:"):
-				match = re.search("(description:)(.*)",str(seq.description))
-				if match == None:
-					desc[str(seq.id)] = "None"
-				else:
-					desc[str(seq.id)] = match.group(2)
+			match = re.search("(description:)(.*)",str(seq.description))
+			if match == None:
+				desc[str(seq.id)] = str(seq.description).replace("MULTISPECIES: ","").split(" [")[0]
 			else:
-				desc[str(seq.id)] = vals[2]
+				desc[str(seq.id)] = match.group(2)
+
 			count += 1
 	return seqdata, desc, count
 
@@ -456,6 +453,18 @@ def combine_seqs():
 	p.close()
 	return
 
+def combine_homologs():
+	o = open(os.path.join(outdir,"homolog.faa"),'w')
+	for f in os.listdir(os.path.join(outdir, "homolog_faa")):
+		group_id = f.split(".")[0]
+		for seq in SeqIO.parse(open(os.path.join(outdir,"homolog_faa",f),'r'),'fasta'):
+			seq.id = seq.id+"|"+group_id
+			seq.description = ""
+			SeqIO.write(seq,o,'fasta')
+	o.close()
+	return
+
+
 def main():
 	args = parse_args()
 	genomedb = os.path.abspath(args.genomedb)
@@ -545,6 +554,7 @@ def main():
 			pp.cleanup(os.path.join(outdir,"aligned"))
 		emit_consensus_seqs()
 		combine_seqs()
+		combine_homologs()
 		if clean:
 			pp.cleanup(os.path.join(outdir,"hmms"))
 			pp.cleanup(os.path.join(outdir,"consensus_seqs"))
@@ -552,6 +562,8 @@ def main():
 			pp.cleanup(os.path.join(outdir,"paranoid_output"))
 			pp.cleanup(os.path.join(outdir,"dmnd_tmp"))
 			pp.cleanup(os.path.join(outdir,"faa"))
+			pp.cleanup(os.path.join(outdir,"homolog_faa"))
+			pp.cleanup(os.path.join(outdir,"mcl"))
 		pp.dump_matrices(outdir)
 
 
