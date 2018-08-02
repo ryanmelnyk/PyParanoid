@@ -11,12 +11,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from itertools import combinations
 
-def match_seqs(fastafile,outdir,outfile=False):
-	if outfile:
-		o = open(outfile,'w')
-	os.system("phmmer --tblout {} {} {}".format(os.path.join(os.path.abspath(outdir),".phmmer.hits"),os.path.abspath(fastafile),os.path.join(outdir,"all_groups.faa")))
+def match_seqs(fastafile,outdir,prefix):
+	o = open(os.path.abspath(prefix)+".txt",'w')
+	os.system("phmmer --tblout {} {} {}".format(os.path.abspath(prefix)+".phmmer.hits",os.path.abspath(fastafile),os.path.join(outdir,"all_groups.faa")))
 	hit_scores = {}
-	for line in open(os.path.join(outdir,".phmmer.hits"),'r'):
+	for line in open(os.path.abspath(prefix)+".phmmer.hits",'r'):
 		if line.startswith("#"):
 			continue
 		else:
@@ -34,8 +33,7 @@ def match_seqs(fastafile,outdir,outfile=False):
 
 	for s in norm_scores.keys():
 		print s
-		if outfile:
-			o.write(s+"\n")
+		o.write(s+"\n")
 		for i in sorted(norm_scores[s], key=lambda (k,v): (v,k), reverse=True):
 			if i[1] > 1.0:
 				score = "Good match!"
@@ -43,8 +41,7 @@ def match_seqs(fastafile,outdir,outfile=False):
 				score = "Possible match..."
 			if i[1] < 0.5:
 				score = "Probably not a very good match..."
-			if outfile:
-				o.write(" ".join([str(x) for x in ["\t", i[0],round(i[1],3), score]])+"\n")
+			o.write(" ".join([str(x) for x in ["\t", i[0],round(i[1],3), score]])+"\n")
 			print "\t", i[0],round(i[1],3), score
 	return
 
