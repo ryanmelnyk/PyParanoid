@@ -188,16 +188,23 @@ def plot_unique_genome_diagram(gbk, unique_loci):
 	gdd.draw(format='circular', orientation='landscape',tracklines=0, pagesize='A5', fragments=5, circular=1)
 	return gdd
 
-def synteny_check(gbk,outdir,map_to,strains,outfile):
+def synteny_check(gbk,outdir,map_to,strains,outfile,use_protein_id=False):
 	seqs = {}
 	for seq in SeqIO.parse(open(gbk,'r'),'genbank'):
 		seqs[seq.id] = []
 		for feat in seq.features:
 			if feat.type == "CDS":
-				try:
-					seqs[seq.id].append(feat.qualifiers["locus_tag"][0])
-				except KeyError:
-					seqs[seq.id].append(feat.qualifiers["protein_id"][0])
+				if use_protein_id:
+					try:
+						seqs[seq.id].append(feat.qualifiers["protein_id"][0].split(".")[0])
+					except KeyError:
+						pass
+				else:
+					try:
+						seqs[seq.id].append(feat.qualifiers["locus_tag"][0].split(".")[0])
+					except KeyError:
+						pass
+
 	groupdict = {}
 
 	locustags = []
@@ -423,7 +430,7 @@ def plot_multigene_presence(groupfile,pypdir,tree_loc,outfile=None,add_labels=Tr
 	dat = {}
 
 
-	header = open(os.path.join(pypdir,"homolog_matrix.txt"),'r').readline().split("\t")
+	header = open(os.path.join(pypdir,"homolog_matrix.txt"),'r').readline().rstrip().split("\t")
 	indices = [header.index(s) for s in strains]
 	for line in open(os.path.join(pypdir,"homolog_matrix.txt"),'r'):
 		vals = line.rstrip().split("\t")
