@@ -242,7 +242,8 @@ def main():
 	create_master_alignment(orthos,strains)
 	if args.clean:
 		pp.cleanup(os.path.join(prefix,"ortho_align"))
-		pp.cleanup(os.path.join(prefix,"concat"))
+		pp.cleanup(os.path.join(prefix,"orthos"))
+		pp.cleanup(os.path.join(prefix,"hmms"))
 
 
 if __name__ == '__main__':
