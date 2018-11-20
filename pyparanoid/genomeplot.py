@@ -108,20 +108,29 @@ def add_group_to_tree(group,treefile,outdir,to_compress=False):
 	return tree
 
 
-def subset_matrix(strains,outdir):
+def subset_matrix(strains,outdir,groups=None):
 	infile = open(os.path.join(outdir,"homolog_matrix.txt"),'r')
 	header_line = infile.readline().rstrip().split("\t")
 	indices = [header_line.index(s) for s in strains]
 
 	lines = []
-	groups = []
+	if not groups:
+		all_groups = []
 	for line in infile:
 		vals = line.rstrip().split("\t")
 		# convert input data into boolean presence/absence
-		lines.append([int(bool(int(vals[i]))) for i in indices])
-		groups.append(vals[0])
+
+		if groups:
+			if vals[0] in groups:
+				lines.append([int(bool(int(vals[i]))) for i in indices])
+		else:
+			lines.append([int(bool(int(vals[i]))) for i in indices])
+			all_groups.append(vals[0])
 	a = np.stack(lines)
-	return a, groups
+	if groups:
+		return a
+	else:
+		return a,groups
 
 
 def dump_matrix(cc,strains,outfile):
