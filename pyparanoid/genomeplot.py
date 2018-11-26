@@ -114,8 +114,7 @@ def subset_matrix(strains,outdir,groups=None):
 	indices = [header_line.index(s) for s in strains]
 
 	lines = []
-	if not groups:
-		all_groups = []
+	all_groups = []
 	for line in infile:
 		vals = line.rstrip().split("\t")
 		# convert input data into boolean presence/absence
@@ -123,14 +122,12 @@ def subset_matrix(strains,outdir,groups=None):
 		if groups:
 			if vals[0] in groups:
 				lines.append([int(bool(int(vals[i]))) for i in indices])
+				all_groups.append(vals[0])
 		else:
 			lines.append([int(bool(int(vals[i]))) for i in indices])
 			all_groups.append(vals[0])
 	a = np.stack(lines)
-	if groups:
-		return a
-	else:
-		return a,groups
+	return a,all_groups
 
 
 def dump_matrix(cc,strains,outfile):
