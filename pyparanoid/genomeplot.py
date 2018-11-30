@@ -261,7 +261,7 @@ def synteny_check(gbk,outdir,map_to,strains,outfile,use_protein_id=False):
 def _parse_genbank(g,genomedb):
 	if g[2] == "ensembl" or g[2] == "NCBI":
 		FIELD = "protein_id"
-	elif g[2] == "prokka_in_house":
+	elif g[2] == "prokka_in_house" or g[2] == "img":
 		FIELD = "locus_tag"
 	for seq in SeqIO.parse(open(os.path.join(os.path.abspath(genomedb),"gbk",g[0]+".gbk"),'r'),"genbank"):
 		for feat in seq.features:
@@ -279,7 +279,7 @@ def _make_tracks(seq, span, coords, g, GD, count, locus_tags, labels):
 
 	if g[2] == "ensembl" or g[2] == "NCBI":
 		FIELD = "protein_id"
-	elif g[2] == "prokka_in_house":
+	elif g[2] == "prokka_in_house" or g[2] == "img":
 		FIELD = "locus_tag"
 
 	track = GD.new_track(count, height=1, name="CDS",\
