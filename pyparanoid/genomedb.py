@@ -441,6 +441,7 @@ def get_taxdata_from_genomedb(outdir, max_queries):
 def download_genbank_files(strains,genomedb):
 	prokka = []
 	refseq = []
+	img = []
 	ensembl = {}
 	for line in open(os.path.join(genomedb,"genome_metadata.txt")):
 		vals = line.rstrip().split("\t")
@@ -455,6 +456,8 @@ def download_genbank_files(strains,genomedb):
 				refseq.append((vals[0],vals[2]))
 			elif vals[6].startswith("prokka"):
 				prokka.append((vals[0],vals[2]))
+			elif vals[6].startswith("img"):
+				img.append((vals[0],vals[2]))
 			else:
 				pass
 
@@ -466,6 +469,14 @@ def download_genbank_files(strains,genomedb):
 			p_count += 1
 		else:
 			print "Genbank from prokka assembly",p[1], "not found..."
+
+	i_count = 0
+	for i in img:
+		if os.path.exists(os.path.join(genomedb,"gbk",p[1]+".gbk")):
+			pass
+			i_count += 1
+		else:
+			print "Genbank from img assembly",p[1], "not found..."
 
 	ens = ftplib.FTP('ftp.ensemblgenomes.org')
 	ens.login()
@@ -522,6 +533,7 @@ def download_genbank_files(strains,genomedb):
 	for e in ensembl:
 		e_tot += len(ensembl[e])
 	print p_count,"of", len(prokka), "prokka genbank files available."
+	print i_count, "of", len(img), "refseq genbank files available."
 	print e_count,"of", e_tot, "Ensembl genbank files available."
 	print r_count, "of", len(refseq), "refseq genbank files available."
 	return
