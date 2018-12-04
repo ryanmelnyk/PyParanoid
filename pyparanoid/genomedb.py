@@ -472,11 +472,11 @@ def download_genbank_files(strains,genomedb):
 
 	i_count = 0
 	for i in img:
-		if os.path.exists(os.path.join(genomedb,"gbk",p[1]+".gbk")):
+		if os.path.exists(os.path.join(genomedb,"gbk",i[1]+".gbk")):
 			pass
 			i_count += 1
 		else:
-			print "Genbank from img assembly",p[1], "not found..."
+			print "Genbank from img assembly",i[1], "not found..."
 
 	ens = ftplib.FTP('ftp.ensemblgenomes.org')
 	ens.login()
