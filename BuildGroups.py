@@ -19,7 +19,7 @@ def parse_args():
 	parser = argparse.ArgumentParser(description='''
 Master script for running PyParanoid process.
 
-modes: setup, parse, cluster, extract
+modes: multi_setup, parse, cluster, extract,build
 	''')
 	parser.add_argument('genomedb',type=str,help='relative path to genomedb for raw data')
 	parser.add_argument('strainlist',type=str,help='text file, one strain per line. names should be "species" field from genome_metadata table')
@@ -477,7 +477,7 @@ def main():
 	pypath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 	if args.mode:
-		if args.mode not in ["multi_setup","parse","extract","cluster"]:
+		if args.mode not in ["multi_setup","parse","extract","cluster","build"]:
 			print "Unknown mode!!! Exiting..."
 			sys.exit()
 
@@ -545,7 +545,7 @@ def main():
 		pp.createdirs(outdir,["homolog_faa","clustered","aligned","hmms","consensus_seqs"])
 		parse_clusters(strains,seq_number)
 		parse_groups(seqdata,desc)
-	if not args.mode or args.mode == "build"
+	if not args.mode or args.mode == "build":
 		cdhit_seqs()
 		align_groups()
 		if clean:
