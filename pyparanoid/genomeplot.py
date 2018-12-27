@@ -497,6 +497,6 @@ def select_rep_genomes(genomedb,treefile,threshold=0.01,output="rep_strains.txt"
 					good_strains.append(node.name)
 
 	print len(good_strains), "at threshold", threshold
-	o.write("\n".join(good_strains))
+	o.write("\n".join(good_strains)+"\n")
 	o.close()
 	return

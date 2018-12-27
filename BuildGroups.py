@@ -545,6 +545,7 @@ def main():
 		pp.createdirs(outdir,["homolog_faa","clustered","aligned","hmms","consensus_seqs"])
 		parse_clusters(strains,seq_number)
 		parse_groups(seqdata,desc)
+	if not args.mode or args.mode == "build"
 		cdhit_seqs()
 		align_groups()
 		if clean:
