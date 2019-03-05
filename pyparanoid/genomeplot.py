@@ -34,7 +34,7 @@ def match_seqs(fastafile,outdir,prefix):
 	for s in norm_scores.keys():
 		print(s)
 		o.write(s+"\n")
-		for i in sorted(norm_scores[s], key=lambda k,v: (v,k), reverse=True):
+		for i in sorted(norm_scores[s], reverse=True, key=lambda k: k[1]):
 			if i[1] > 1.0:
 				score = "Good match!"
 			if i[1] > 0.5 and i[1] < 1.0:
