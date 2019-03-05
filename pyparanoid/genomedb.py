@@ -6,7 +6,7 @@ import subprocess
 import datetime
 import shutil
 import sys
-from urllib import urlopen
+from urllib.request import urlopen
 from Bio import SeqIO, Entrez
 import ncbi_genome_download as ngd
 
@@ -15,14 +15,14 @@ def check_db(outdir):
 	if os.path.isdir(outdir):
 		pass
 	else:
-		print os.path.abspath(outdir), "doesn't exist! Run gdb.setupdirs() first."
+		print(os.path.abspath(outdir), "doesn't exist! Run gdb.setupdirs() first.")
 		sys.exit()
 
 	for f in ["pep","dna","gbk"]:
 		if os.path.isdir(os.path.join(outdir,f)):
 			pass
 		else:
-			print os.path.abspath(os.path.join(outdir,f)), "doesn't exist! Run gdb.setupdirs() first."
+			print(os.path.abspath(os.path.join(outdir,f)), "doesn't exist! Run gdb.setupdirs() first.")
 			sys.exit()
 
 	if "genome_metadata.txt" not in os.listdir(outdir):
@@ -41,18 +41,18 @@ def check_db(outdir):
 	return assemblies, species_tags
 
 def setupdirs(outdir):
-	print "Setting up", os.path.basename(outdir)
+	print("Setting up", os.path.basename(outdir))
 	try:
 		os.makedirs(outdir)
 	except OSError as exc:
 		if exc.errno == errno.EEXIST:
-			print "\tDatabase folder exists:", outdir
+			print("\tDatabase folder exists:", outdir)
 
 	for f in ["pep","dna","gbk"]:
 		try:
 			os.makedirs(os.path.join(os.path.join(outdir,f)))
 		except OSError:
-			print "\tSubfolder exists:", os.path.join(os.path.basename(outdir),f)
+			print("\tSubfolder exists:", os.path.join(os.path.basename(outdir),f))
 
 	return
 
@@ -64,7 +64,7 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 
 	for j in ens.pwd().split("/"):
 		if j.startswith("release"):
-			print "Current release of EnsemblBacteria:", j
+			print("Current release of EnsemblBacteria:", j)
 			break
 
 	if j+".txt" not in os.listdir(outdir):
@@ -93,11 +93,11 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 			o.write("\t".join([str(x) for x in thisline])+"\n")
 
 			if count % 10000 == 0:
-				print "\t", count, "JSON records parsed."
-		print "\t",count, "total JSON records parsed..."
+				print("\t", count, "JSON records parsed.")
+		print("\t",count, "total JSON records parsed...")
 		o.close()
 	else:
-		print j+".txt", "found in", outdir+"...parsing..."
+		print(j+".txt", "found in", outdir+"...parsing...")
 	ens.close()
 
 	genomes = {}
@@ -139,12 +139,12 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 
 		if maxgen is not None:
 			if len(genomes.keys()) == maxgen:
-				print "\tMaximum of {} genomes reached..."\
-					.format(str(len(genomes.keys())))
+				print("\tMaximum of {} genomes reached..."\
+					.format(str(len(genomes.keys()))))
 				break
 
-	print len(assemblies), "found in", os.path.basename(outdir)+"."
-	print len(genomes), "genomes in queue to download..."
+	print(len(assemblies), "found in", os.path.basename(outdir)+".")
+	print(len(genomes), "genomes in queue to download...")
 
 	for g in genomes:
 		genomes[g]["version"] = j
@@ -168,7 +168,7 @@ def get_data(genomes,vals):
 def Ensembl_ftp(fg, outdir):
 	ens = ftplib.FTP('ftp.ensemblgenomes.org')
 	ens.login()
-	print "Downloading {} genome files...".format(str(len(fg.keys())))
+	print("Downloading {} genome files...".format(str(len(fg.keys()))))
 	count = 0
 	files = os.listdir(outdir)
 	if "genome_metadata.txt" not in files:
@@ -193,9 +193,9 @@ def Ensembl_ftp(fg, outdir):
 			o.write("\t".join([str(v) for v in vals])+"\n")
 			count += 1
 			if count % 100 == 0:
-				print "\t", count, "files downloaded."
+				print("\t", count, "files downloaded.")
 		except ftplib.error_perm:
-			print "Issue with data for {}...skipping.".format(f)
+			print("Issue with data for {}...skipping.".format(f))
 
 	o.close()
 	ens.close()
@@ -219,16 +219,16 @@ def check_unique(species_id,outdir):
 			strains.append(line.rstrip().split("\t")[2])
 
 	if species_id not in strains:
-		print "Species ID is unique! Moving on..."
+		print("Species ID is unique! Moving on...")
 		return True
 	else:
-		print "Species ID is not unique. Select a new ID."
+		print("Species ID is not unique. Select a new ID.")
 		return False
 
 def add_Prokka_genome(outdir,prokka,species_id,taxid="2"):
 	if check_unique(species_id,outdir):
 		stats = {}
-		print "Copying files for", species_id
+		print("Copying files for", species_id)
 		for f in os.listdir(prokka):
 			if f.endswith(".faa"):
 				stats['ngenes'] = 0
@@ -259,7 +259,7 @@ def add_Prokka_genome(outdir,prokka,species_id,taxid="2"):
 def add_img_genome(outdir,img,species_id,taxid="2"):
 	if check_unique(species_id,outdir):
 		stats = {}
-		print "Copying files for", species_id
+		print("Copying files for", species_id)
 		for f in os.listdir(img):
 			vals = f.split(".")
 			if f.endswith(".faa"):
@@ -291,25 +291,25 @@ def download_Refseq_files(outdir,cpus=1,names=False,taxids=False):
 
 	files = ["fasta","protein-fasta","assembly-stats"]
 	if not (names or taxids):
-		print "Must specify a name or a taxid."
+		print("Must specify a name or a taxid.")
 	elif os.path.exists(os.path.join(outdir,"refseq")):
-		print "Refseq download already exists at", os.path.join(outdir,"refseq")
-		print "Delete before proceeding."
+		print("Refseq download already exists at", os.path.join(outdir,"refseq"))
+		print("Delete before proceeding.")
 	else:
 		if names:
 			for name in names.split(","):
-				print "Downloading files for {}...".format(name)
+				print("Downloading files for {}...".format(name))
 				for f in files:
-					print "\tworking on {} files...".format(f)
+					print("\tworking on {} files...".format(f))
 					if cpus == 1:
 						ngd.download(group="bacteria",genus=name,file_format=f,section="refseq",output=outdir)
 					else:
 						ngd.download(group="bacteria",genus=name,file_format=f,section="refseq",output=outdir,parallel=cpus)
 		if taxids:
 			for taxid in taxids.split(","):
-				print "Downloading files for {}...".format(str(taxid))
+				print("Downloading files for {}...".format(str(taxid)))
 				for f in files:
-					print "\tworking on {} files...".format(f)
+					print("\tworking on {} files...".format(f))
 					if cpus == 1:
 						ngd.download(group="bacteria",taxid=taxid,file_format=f,section="refseq",output=outdir)
 					else:
@@ -322,10 +322,10 @@ def download_Refseq_files(outdir,cpus=1,names=False,taxids=False):
 def process_Refseq(outdir,assemblies,species_tags):
 	metadata = open(os.path.join(outdir,"genome_metadata.txt"),'a')
 	if not os.path.exists(os.path.join(outdir,"refseq")):
-		print "No files downloaded!"
-		print "Check genus/species name or taxid"
+		print("No files downloaded!")
+		print("Check genus/species name or taxid")
 	else:
-		print len(os.listdir(os.path.join(outdir,"refseq","bacteria"))), "genomes to process."
+		print(len(os.listdir(os.path.join(outdir,"refseq","bacteria"))), "genomes to process.")
 		count = 0
 		added = 0
 		for f in os.listdir(os.path.join(outdir,"refseq","bacteria")):
@@ -372,9 +372,9 @@ def process_Refseq(outdir,assemblies,species_tags):
 				added += 1
 			count += 1
 			if count % 100 == 0:
-				print count, "processed..."
+				print(count, "processed...")
 		metadata.close()
-		print count, "genomes processed and", added, "added to {}.".format(os.path.basename(outdir))
+		print(count, "genomes processed and", added, "added to {}.".format(os.path.basename(outdir)))
 	return
 
 def get_taxonomy(outdir,email="yourname@email.com",max_queries=None):
@@ -386,7 +386,7 @@ def get_taxonomy(outdir,email="yourname@email.com",max_queries=None):
 		o = open(os.path.join(outdir,"tax_info.txt"),'w')
 		o.write("species_id\ttaxonomy_id\tsuperkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\tdate_added\tdate_modified\n")
 	count = len(taxdata)
-	print "Extracting", str(count), "taxonomy records from Entrez-NCBI..."
+	print("Extracting", str(count), "taxonomy records from Entrez-NCBI...")
 	for t in taxdata:
 		values = [t,taxdata[t],None,None,None,None,None,None,None,datetime.datetime.now(),datetime.datetime.now()]
 		records = Entrez.parse(Entrez.efetch(db="taxonomy",id=str(taxdata[t]),retmode="xml"))
@@ -410,10 +410,10 @@ def get_taxonomy(outdir,email="yourname@email.com",max_queries=None):
 					pass
 		count -= 1
 		if count % 100 == 0:
-			print count, "records remaining..."
+			print(count, "records remaining...")
 
 		o.write("\t".join([str(x) for x in values])+"\n")
-	print "Done!"
+	print("Done!")
 
 	return
 
@@ -468,7 +468,7 @@ def download_genbank_files(strains,genomedb):
 			pass
 			p_count += 1
 		else:
-			print "Genbank from prokka assembly",p[1], "not found..."
+			print("Genbank from prokka assembly",p[1], "not found...")
 
 	i_count = 0
 	for i in img:
@@ -476,7 +476,7 @@ def download_genbank_files(strains,genomedb):
 			pass
 			i_count += 1
 		else:
-			print "Genbank from img assembly",i[1], "not found..."
+			print("Genbank from img assembly",i[1], "not found...")
 
 	ens = ftplib.FTP('ftp.ensemblgenomes.org')
 	ens.login()
@@ -490,15 +490,14 @@ def download_genbank_files(strains,genomedb):
 				else:
 					wd = '/pub/{}/bacteria/genbank/{}_collection/{}'.format(e,"_".join(vals[5].split("_")[0:2]),vals[6])
 					ens.cwd(wd)
-
+					o = open(os.path.join(genomedb,"gbk",vals[6]+'.gbk.gz'),'wb')
 					for filepath in ens.nlst():
 						if filepath.endswith(".dat.gz"):
-							o = open(os.path.join(genomedb,"gbk",vals[6]+'.gbk.gz'),'wb')
 							ens.retrbinary("RETR " + filepath, o.write)
-							o.close()
-							cmds = ["gunzip",os.path.join(genomedb,"gbk",vals[6]+'.gbk.gz')]
-							proc = subprocess.Popen(cmds)
-							proc.wait()
+					o.close()
+					cmds = ["gunzip",os.path.join(genomedb,"gbk",vals[6]+'.gbk.gz')]
+					proc = subprocess.Popen(cmds)
+					proc.wait()
 					e_count += 1
 			else:
 				pass
@@ -513,7 +512,7 @@ def download_genbank_files(strains,genomedb):
 			species = r[1]
 			ens = ftplib.FTP('ftp.ncbi.nlm.nih.gov')
 			ens.login()
-			ens.cwd("/genomes/all/GCF/{}/{}/{}".format(assembly[0:3],assembly[3:6], assembly[6:9]))
+			ens.cwd("/genomes/all/GCA/{}/{}/{}".format(assembly[0:3],assembly[3:6], assembly[6:9]))
 			for f in ens.nlst():
 				if f.split("_")[1] == assembly:
 					ens.cwd(f)
@@ -532,15 +531,16 @@ def download_genbank_files(strains,genomedb):
 	e_tot = 0
 	for e in ensembl:
 		e_tot += len(ensembl[e])
-	print p_count,"of", len(prokka), "prokka genbank files available."
-	print i_count, "of", len(img), "refseq genbank files available."
-	print e_count,"of", e_tot, "Ensembl genbank files available."
-	print r_count, "of", len(refseq), "refseq genbank files available."
+	print(p_count,"of", len(prokka), "prokka genbank files available.")
+	print(i_count, "of", len(img), "IMG genbank files available.")
+	print(e_count,"of", e_tot, "Ensembl genbank files available.")
+	print(r_count, "of", len(refseq), "refseq genbank files available.")
 	return
 
 def download_dna_files(strains,genomedb):
 	prokka = []
 	refseq = []
+	img = []
 	ensembl = {}
 	for line in open(os.path.join(genomedb,"genome_metadata.txt")):
 		vals = line.rstrip().split("\t")
@@ -555,6 +555,8 @@ def download_dna_files(strains,genomedb):
 				refseq.append((vals[0],vals[2]))
 			elif vals[6].startswith("prokka"):
 				prokka.append((vals[0],vals[2]))
+			elif vals[6].startswith("img"):
+				img.append((vals[0],vals[2]))
 			else:
 				pass
 
@@ -564,15 +566,24 @@ def download_dna_files(strains,genomedb):
 			pass
 			p_count += 1
 		else:
-			print "Fasta file from prokka assembly",p[1], "not found..."
+			print("Fasta file from prokka assembly",p[1], "not found...")
+
+	i_count = 0
+	for i in img:
+		if os.path.exists(os.path.join(genomedb,"gbk",i[1]+".gbk")):
+			pass
+			i_count += 1
+		else:
+			print("Genbank from img assembly",i[1], "not found...")
 
 	ens = ftplib.FTP('ftp.ensemblgenomes.org')
 	ens.login()
 	e_count = 0
 	for e in ensembl:
+		### keep for my personal genomedb purposes
 		if e == "release-32":
 			for strain in ensembl[e]:
-				print "release-32 outdated...skipping",strain
+				print("release-32 outdated...skipping",strain)
 		else:
 			for line in open(os.path.join(genomedb,"{}.txt".format(e)),'r'):
 				vals = line.rstrip().split("\t")
@@ -605,26 +616,25 @@ def download_dna_files(strains,genomedb):
 			species = r[1]
 			ens = ftplib.FTP('ftp.ncbi.nlm.nih.gov')
 			ens.login()
-			ens.cwd("/genomes/all/GCF/{}/{}/{}".format(assembly[0:3],assembly[3:6], assembly[6:9]))
+			ens.cwd("/genomes/all/GCA/{}/{}/{}".format(assembly[0:3],assembly[3:6], assembly[6:9]))
 			for f in ens.nlst():
 				if f.split("_")[1] == assembly:
 					ens.cwd(f)
-					for g in ens.nlst():
-						if g.endswith("_genomic.fna.gz"):
-							filepath = os.path.join(genomedb,"dna","{}.fna.gz".format(species))
-							dna = open(filepath,'wb')
-							ens.retrbinary("RETR " + g, dna.write)
-							dna.close()
-							cmds = ["gunzip",os.path.join(genomedb,"dna","{}.fna.gz".format(species))]
-							proc = subprocess.Popen(cmds)
-							proc.wait()
-							r_count += 1
+					filepath = os.path.join(genomedb,"dna","{}.fna.gz".format(species))
+					dna = open(filepath,'wb')
+					ens.retrbinary("RETR {}_genomic.fna.gz".format(f), dna.write)
+					dna.close()
+					cmds = ["gunzip",os.path.join(genomedb,"dna","{}.fna.gz".format(species))]
+					proc = subprocess.Popen(cmds)
+					proc.wait()
+					r_count += 1
 			ens.close()
 
 	e_tot = 0
 	for e in ensembl:
 		e_tot += len(ensembl[e])
-	print p_count,"of", len(prokka), "prokka DNA files available."
-	print e_count,"of", e_tot, "Ensembl DNA files available."
-	print r_count, "of", len(refseq), "refseq DNA files available."
+	print(p_count,"of", len(prokka), "prokka DNA files available.")
+	print(i_count, "of", len(img), "IMG dna files available.")
+	print(e_count,"of", e_tot, "Ensembl DNA files available.")
+	print(r_count, "of", len(refseq), "refseq DNA files available.")
 	return
