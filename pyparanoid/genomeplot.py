@@ -32,9 +32,9 @@ def match_seqs(fastafile,outdir,prefix):
 		norm_scores[query] = [(h[0],h[1]/float(hit_gene_lengths[h[0]])) for h in hit_scores[query]]
 
 	for s in norm_scores.keys():
-		print s
+		print(s)
 		o.write(s+"\n")
-		for i in sorted(norm_scores[s], key=lambda (k,v): (v,k), reverse=True):
+		for i in sorted(norm_scores[s], key=lambda k,v: (v,k), reverse=True):
 			if i[1] > 1.0:
 				score = "Good match!"
 			if i[1] > 0.5 and i[1] < 1.0:
@@ -42,7 +42,7 @@ def match_seqs(fastafile,outdir,prefix):
 			if i[1] < 0.5:
 				score = "Probably not a very good match..."
 			o.write(" ".join([str(x) for x in ["\t", i[0],round(i[1],3), score]])+"\n")
-			print "\t", i[0],round(i[1],3), score
+			print("\t", i[0],round(i[1],3), score)
 	return
 
 def add_group_to_tree(group,treefile,outdir,to_compress=False):
@@ -156,10 +156,10 @@ def find_unique_genes(a,strains,groups):
 		else:
 			pass
 	for s in strains:
-		print s
-		print "\t", len(unique[s]), "unique"
-		print "\t", len(missing[s]), "missing"
-	print len(common), "common to all strains."
+		print(s)
+		print("\t", len(unique[s]), "unique")
+		print("\t", len(missing[s]), "missing")
+	print(len(common), "common to all strains.")
 	return {"unique":unique,"missing":missing,"common":common}
 
 def find_unique_loci(strain,outdir,uniq_info):
@@ -271,8 +271,8 @@ def _parse_genbank(g,genomedb):
 						return seq, (int(feat.location.start), int(feat.location.end))
 				except KeyError:
 					pass
-	print g
-	print "locus not found. try again."
+	print(g)
+	print("locus not found. try again.")
 	return
 
 def _make_tracks(seq, span, coords, g, GD, count, locus_tags, labels):
@@ -402,7 +402,7 @@ def get_group_dna_seqs(group, genomedb,pypdir,strains=False):
 	for strain in strain_names:
 		group_tags = tags[strain_names.index(strain)].split(";")
 		if strain not in genbank_files:
-			print "File for", strain, "not found..."
+			print("File for", strain, "not found...")
 		else:
 			for seq in SeqIO.parse(open(os.path.join(os.path.abspath(genomedb),"gbk",strain+".gbk"),'r'),"genbank"):
 				for feat in seq.features:
@@ -496,7 +496,7 @@ def select_rep_genomes(genomedb,treefile,threshold=0.01,output="rep_strains.txt"
 				if node.is_leaf():
 					good_strains.append(node.name)
 
-	print len(good_strains), "at threshold", threshold
+	print(len(good_strains), "at threshold", threshold)
 	o.write("\n".join(good_strains)+"\n")
 	o.close()
 	return
