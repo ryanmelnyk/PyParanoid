@@ -74,11 +74,11 @@ def createdirs(outdir, folders):
 		try:
 			os.makedirs(os.path.abspath(os.path.join(outdir,f)))
 		except OSError:
-			print "Subfolder exists:", os.path.join(outdir,f)
+			print("Subfolder exists:", os.path.join(outdir,f))
 	return
 
 def cleanup(d):
-	print "Cleaning up", d
+	print("Cleaning up", d)
 	for f in os.listdir(d):
 		os.remove(os.path.join(d,f))
 	os.rmdir(d)
@@ -157,8 +157,8 @@ def get_groupsizes(relpath):
 		singles = np.count_nonzero(a[i,:] == 1)
 		if singles > a.shape[1]*0.95:
 			poss_orthos += 1
-	print l, "total groups in", os.path.basename(outdir)
-	print poss_orthos, "groups are present in a single copy in >95% of strains."
+	print(l, "total groups in", os.path.basename(outdir))
+	print(poss_orthos, "groups are present in a single copy in >95% of strains.")
 	return (x,y,poss_orthos)
 
 def get_rarefaction(relpath):
@@ -169,9 +169,9 @@ def get_rarefaction(relpath):
 	y = []
 	for i in range(1,l):
 		if i % 100 == 0:
-			print "on genome number {} of {}".format(i,l)
+			print("on genome number {} of {}".format(i,l))
 		for k in range(0,3):
 			 x.append(i)
 			 y.append(np.unique(np.nonzero(a[:,np.random.choice(l,size=i,replace=False)])[0]).shape[0])
-	print "Done!"
+	print("Done!")
 	return (x,y)

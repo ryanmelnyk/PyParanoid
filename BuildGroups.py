@@ -19,7 +19,7 @@ def parse_args():
 	parser = argparse.ArgumentParser(description='''
 Master script for running PyParanoid process.
 
-modes: multi_setup, parse, cluster, extract,build
+modes: multi_setup, parse, cluster, extract, build
 	''')
 	parser.add_argument('genomedb',type=str,help='relative path to genomedb for raw data')
 	parser.add_argument('strainlist',type=str,help='text file, one strain per line. names should be "species" field from genome_metadata table')
@@ -39,26 +39,26 @@ def setupdir(strains,genomedb):
 		os.makedirs(outdir)
 	except OSError as exc:
 		if exc.errno == errno.EEXIST:
-			print "Database folder exists:", outdir
+			print("Database folder exists:", outdir)
 
 	pp.createdirs(outdir, ["faa","m8","out","paranoid_output","dmnd_tmp"])
 
 	if not os.path.isdir(genomedb):
-		print "GenomeDB folder", genomedb, "doesn't exist...exiting."
+		print("GenomeDB folder", genomedb, "doesn't exist...exiting.")
 		sys.exit()
 
 	if not os.path.isdir(os.path.join(genomedb,"pep")):
-		print "GenomeDB folder is missing a 'pep' folder...exiting."
+		print("GenomeDB folder is missing a 'pep' folder...exiting.")
 		sys.exit()
 
 	if verbose:
-		print "Formatting",len(strains), "fasta files..."
+		print("Formatting",len(strains), "fasta files...")
 	for s in strains:
 		try:
 			i = open(os.path.join(genomedb,"pep",s+".pep.fa"),"r")
 		except IOError as exc:
 			if exc.errno == 2:
-				print s, 'not found in database...check your strainlist.'
+				print(s, 'not found in database...check your strainlist.')
 				sys.exit()
 		o = open(os.path.join(outdir,"faa",s+".faa"),"w")
 		for seq in SeqIO.parse(i,'fasta'):
@@ -70,7 +70,7 @@ def setupdir(strains,genomedb):
 def make_diamond_databases(strains):
 	count = len(strains)
 	if verbose:
-		print "Making diamond databases for", count, "strains..."
+		print("Making diamond databases for", count, "strains...")
 	o = open(os.path.join(outdir,"all_strains.faa"),'w')
 	for s in strains:
 		o.write(open("{}/faa/{}.faa".format(outdir,s),'r').read())
@@ -86,10 +86,10 @@ def run_diamond(strains):
 	if multi:
 		jobfile = open(os.path.join(outdir,"diamond_jobs.sh"),'w')
 		if verbose:
-			print "Making jobfile for DIAMOND runs..."
+			print("Making jobfile for DIAMOND runs...")
 	else:
 		if verbose:
-			print "Running DIAMOND on all", len(strains), "strains..."
+			print("Running DIAMOND on all", len(strains), "strains...")
 
 	count = len(strains)
 	for s in strains:
@@ -102,10 +102,10 @@ def run_diamond(strains):
 			count -= 1
 			if count == 0:
 				if verbose:
-					print "\tDone!"
+					print("\tDone!")
 			elif count % 100 == 0:
 				if verbose:
-					print "\t"+str(count), "remaining..."
+					print("\t"+str(count), "remaining...")
 			else:
 				pass
 	return
@@ -114,7 +114,7 @@ def parse_diamond(genes,strains):
 
 	count = len(strains)
 	if verbose:
-		print "Parsing diamond results for {} strains...".format(count)
+		print("Parsing diamond results for {} strains...".format(count))
 	for s in strains:
 		hits = {}
 
@@ -141,17 +141,17 @@ def parse_diamond(genes,strains):
 		count -= 1
 		if count == 0:
 			if verbose:
-				print "\tDone!"
+				print("\tDone!")
 		elif count % 100 == 0:
 			if verbose:
-				print "\t"+str(count), "remaining..."
+				print("\t"+str(count), "remaining...")
 		else:
 			pass
 	return
 
 def get_genes(strains):
 	if verbose:
-		print "Getting gene lengths..."
+		print("Getting gene lengths...")
 	genes = {}
 	for s in strains:
 		genes[s] = {}
@@ -165,7 +165,7 @@ def run_inparanoid(strains):
 	if multi:
 		jobfile = open(os.path.join(outdir,"inparanoid_jobs.sh"),'w')
 		if verbose:
-			print "Prepping InParanoid batch files..."
+			print("Prepping InParanoid batch files...")
 		for p in pairs:
 			cmds = "inparanoid2.pl {} {} {}".format(p[0],p[1],outdir+"/")
 			jobfile.write("{}\n".format(cmds))
@@ -173,7 +173,7 @@ def run_inparanoid(strains):
 	else:
 		count = len(pairs)
 		if verbose:
-			print "Running InParanoid on", count, "pairs of strains..."
+			print("Running InParanoid on", count, "pairs of strains...")
 		if use_MP:
 			pool = mp.Pool(processes=cpus)
 			[pool.apply_async(IP_RUN, args=(p,)) for p in pairs]
@@ -181,14 +181,14 @@ def run_inparanoid(strains):
 			pool.join()
 		else:
 			if verbose:
-				print "Sequential mode..."
+				print("Sequential mode...")
 			count = len(pairs)
 			for p in pairs:
 				IP_RUN(p)
 				count -= 1
 				if verbose:
 					if count % 100 == 0:
-						print "\t"+str(count), "remaining..."
+						print("\t"+str(count), "remaining...")
 	return
 
 def IP_RUN(p):
@@ -217,7 +217,7 @@ def create_abc_file():
 	o = open(os.path.join(outdir,"mcl","input.abc"),'w')
 	count = len(os.listdir(os.path.join(outdir,"paranoid_output")))
 	if verbose:
-		print "Parsing", count, "output files."
+		print("Parsing", count, "output files.")
 	for f in os.listdir(os.path.join(outdir,"paranoid_output")):
 		for line in open(os.path.join(outdir,"paranoid_output",f),'r'):
 			if line.startswith("Orto"):
@@ -235,10 +235,10 @@ def create_abc_file():
 		count -= 1
 		if count == 0:
 			if verbose:
-				print "\tDone!"
+				print("\tDone!")
 		elif count % 1000 == 0:
 			if verbose:
-				print "\t"+str(count), "remaining..."
+				print("\t"+str(count), "remaining...")
 		else:
 			pass
 		if clean:
@@ -301,7 +301,7 @@ def parse_clusters(strains, seq_number):
 def parse_groups(seqdata, desc):
 	group_count = 1
 	descript_out = open(os.path.join(outdir, "group_descriptions.txt"),'w')
-	print "Writing fasta files and parsing descriptions..."
+	print("Writing fasta files and parsing descriptions...")
 	for line in open(os.path.join(outdir,"mcl","clusters.txt")):
 		vals = line.rstrip().split()
 		if len(vals) <= threshold:
@@ -316,12 +316,12 @@ def parse_groups(seqdata, desc):
 			o.close()
 			group_count += 1
 	if verbose:
-		print group_count, "groups equal to or larger than", threshold, "sequences."
+		print(group_count, "groups equal to or larger than", threshold, "sequences.")
 	return
 
 def cdhit_seqs():
 	if verbose:
-		print "Clustering sequences..."
+		print("Clustering sequences...")
 	if use_MP:
 		pool = mp.Pool(processes=cpus)
 		[pool.apply_async(CDHIT_RUN, args=(f,)) for f in os.listdir(os.path.join(outdir,"homolog_faa"))]
@@ -329,14 +329,14 @@ def cdhit_seqs():
 		pool.join()
 	else:
 		if verbose:
-			print "Sequential mode..."
+			print("Sequential mode...")
 		count = len(os.listdir(os.path.join(outdir,"homolog_faa")))
 		for f in os.listdir(os.path.join(outdir,"homolog_faa")):
 			CDHIT_RUN(f)
 			count -= 1
 			if verbose:
 				if count % 1000 == 0:
-					print "\t"+str(count), "remaining..."
+					print("\t"+str(count), "remaining...")
 	return
 
 def CDHIT_RUN(f):
@@ -349,7 +349,7 @@ def CDHIT_RUN(f):
 
 def align_groups():
 	if verbose:
-		print "Aligning groups..."
+		print("Aligning groups...")
 	files = []
 	for f in os.listdir(os.path.join(outdir, "clustered")):
 		if f.endswith(".clstr"):
@@ -363,14 +363,14 @@ def align_groups():
 		pool.join()
 	else:
 		if verbose:
-			print "Sequential mode..."
+			print("Sequential mode...")
 		count = len(files)
 		for f in files:
 			ALIGN_RUN(f)
 			count -= 1
 			if verbose:
 				if count % 1000 == 0:
-					print "\t"+str(count), "remaining..."
+					print("\t"+str(count), "remaining...")
 	return
 
 def ALIGN_RUN(f):
@@ -383,7 +383,7 @@ def ALIGN_RUN(f):
 
 def build_hmms():
 	if verbose:
-		print "Building hmms..."
+		print("Building hmms...")
 	if use_MP:
 		pool = mp.Pool(processes=cpus)
 		[pool.apply_async(HMMBUILD_RUN, args=(f,)) for f in os.listdir(os.path.join(outdir, "aligned"))]
@@ -391,14 +391,14 @@ def build_hmms():
 		pool.join()
 	else:
 		if verbose:
-			print "Sequential mode..."
+			print("Sequential mode...")
 		count = len(os.listdir(os.path.join(outdir, "aligned")))
 		for f in os.listdir(os.path.join(outdir, "aligned")):
 			HMMBUILD_RUN(f)
 			count -= 1
 			if verbose:
 				if count % 1000 == 0:
-					print "\t"+str(count), "remaining..."
+					print("\t"+str(count), "remaining...")
 	return
 
 def HMMBUILD_RUN(f):
@@ -411,7 +411,7 @@ def HMMBUILD_RUN(f):
 
 def emit_consensus_seqs():
 	if verbose:
-		print "Emitting consensus sequences..."
+		print("Emitting consensus sequences...")
 	if use_MP:
 		pool = mp.Pool(processes=cpus)
 		[pool.apply_async(HMMEMIT_RUN, args=(f,)) for f in os.listdir(os.path.join(outdir, "hmms"))]
@@ -419,14 +419,14 @@ def emit_consensus_seqs():
 		pool.join()
 	else:
 		if verbose:
-			print "Sequential mode..."
+			print("Sequential mode...")
 		count = len(os.listdir(os.path.join(outdir, "hmms")))
 		for f in os.listdir(os.path.join(outdir, "hmms")):
 			HMMEMIT_RUN(f)
 			count -= 1
 			if verbose:
 				if count % 1000 == 0:
-					print "\t"+str(count), "remaining..."
+					print("\t"+str(count), "remaining...")
 
 	return
 
@@ -440,13 +440,13 @@ def HMMEMIT_RUN(f):
 
 def combine_seqs():
 	if verbose:
-		print "Writing multi-hmm file..."
+		print("Writing multi-hmm file...")
 	o = open(os.path.join(outdir,"all_groups.hmm"),'w')
 	for f in os.listdir(os.path.join(outdir,"hmms")):
 		o.write(open(os.path.join(outdir,"hmms",f),'r').read())
 	o.close()
 	if verbose:
-		print "Writing multi-fasta consensus file..."
+		print("Writing multi-fasta consensus file...")
 	p = open(os.path.join(outdir,"all_groups.faa"),'w')
 	for f in os.listdir(os.path.join(outdir,"consensus_seqs")):
 		p.write(open(os.path.join(outdir,"consensus_seqs",f),'r').read())
@@ -470,7 +470,7 @@ def main():
 	genomedb = os.path.abspath(args.genomedb)
 	strains = [x.rstrip() for x in open(os.path.abspath(args.strainlist),'r')]
 	if len(set(strains)) != len(strains):
-		print "Duplicate entry in strainlist! Exiting..."
+		print("Duplicate entry in strainlist! Exiting...")
 
 	global outdir, pypath
 	outdir = os.path.abspath(args.outdir)
@@ -478,7 +478,7 @@ def main():
 
 	if args.mode:
 		if args.mode not in ["multi_setup","parse","extract","cluster","build"]:
-			print "Unknown mode!!! Exiting..."
+			print("Unknown mode!!! Exiting...")
 			sys.exit()
 
 	global cpus

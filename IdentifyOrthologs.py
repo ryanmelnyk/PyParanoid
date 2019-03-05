@@ -26,12 +26,12 @@ argument relaxes the cutoff and includes homologs that occur exactly once in som
 
 def parse_matrix(strains):
 	orthos = []
-	print "Parsing matrix to identify orthologs..."
+	print("Parsing matrix to identify orthologs...")
 	header = open(os.path.join(outdir,"homolog_matrix.txt")).readline().rstrip().split("\t")
 	try:
 		indices = [header.index(s) for s in strains]
 	except:
-		print s,"not found in matrix. Check strainlist."
+		print(s,"not found in matrix. Check strainlist.")
 	for line in open(os.path.join(outdir,"homolog_matrix.txt")):
 		vals = line.rstrip().split("\t")
 		if vals[0] == "":
@@ -40,17 +40,17 @@ def parse_matrix(strains):
 			strain_vals = [vals[i] for i in indices]
 			if set(strain_vals[1:]) == set(["1"]):
 				orthos.append(vals[0])
-	print len(orthos), "orthologs found."
+	print(len(orthos), "orthologs found.")
 	return orthos
 
 def parse_threshold_matrix(t,strains):
 	orthos = []
-	print "Parsing matrix to identify orthologs..."
+	print("Parsing matrix to identify orthologs...")
 	header = open(os.path.join(outdir,"homolog_matrix.txt")).readline().rstrip().split("\t")
 	try:
 		indices = [header.index(s) for s in strains]
 	except:
-		print s,"not found in matrix. Check strainlist."
+		print(s,"not found in matrix. Check strainlist.")
 	for line in open(os.path.join(outdir,"homolog_matrix.txt")):
 		vals = line.rstrip().split("\t")
 		if vals[0] == "":
@@ -59,12 +59,12 @@ def parse_threshold_matrix(t,strains):
 			strain_vals = [vals[i] for i in indices]
 			if float(strain_vals.count("1"))/float(len(strain_vals)) > t:
 				orthos.append(vals[0])
-	print len(orthos), "orthologs found."
+	print(len(orthos), "orthologs found.")
 	return orthos
 
 def get_orthos(orthos,strains):
 	seqdata = {}
-	print "Parsing homolog.faa..."
+	print("Parsing homolog.faa...")
 	for seq in SeqIO.parse(open(os.path.join(outdir,"homolog.faa"),'r'),'fasta'):
 		vals = seq.id.split("|")
 		if vals[0] in strains:
@@ -76,7 +76,7 @@ def get_orthos(orthos,strains):
 				if vals[0] not in seqdata[vals[2]]:
 					seq.id = vals[0]
 					seqdata[vals[2]][vals[0]] = seq
-	print "Parsing prop_homolog.faa..."
+	print("Parsing prop_homolog.faa...")
 	for seq in SeqIO.parse(open(os.path.join(outdir,"prop_homolog.faa"),'r'),'fasta'):
 		vals = seq.id.split("|")
 		if vals[0] in strains:
@@ -97,7 +97,7 @@ def get_orthos(orthos,strains):
 
 def align_orthos(orthos,cpus):
 	count = len(orthos)
-	print "Aligning {} ortholog files...".format(str(count))
+	print("Aligning {} ortholog files...".format(str(count)))
 	if use_MP:
 		pool = mp.Pool(processes=cpus)
 		[pool.apply_async(hmmalign, args=(o,)) for o in orthos]
@@ -118,7 +118,7 @@ def hmmalign(o):
 def extract_hmms(orthos):
 	count = len(orthos)
 	present = [f.split(".")[0] for f in os.listdir(os.path.join(prefix,"hmms"))]
-	print "Extracting {} HMM files...{} already found.".format(str(count),str(len(present)))
+	print("Extracting {} HMM files...{} already found.".format(str(count),str(len(present))))
 	FNULL = open(os.devnull, 'w')
 	for o in orthos:
 		count -= 1
@@ -129,11 +129,11 @@ def extract_hmms(orthos):
 			proc = subprocess.Popen(cmds.split(),stdout=FNULL,stderr=FNULL)
 			proc.wait()
 		if count % 100 == 0:
-			print "\t"+str(count), "remaining..."
+			print("\t"+str(count), "remaining...")
 		else:
 			pass
 	if count == 0:
-		print "\tDone!"
+		print("\tDone!")
 	FNULL.close()
 	return
 
@@ -142,7 +142,7 @@ def create_master_alignment(orthos,strains):
 	align_data = {k : [] for k in strains}
 	count = len(orthos)
 	total_leng = 0 ###DEBUG
-	print "Creating master alignment...Parsing {} homologs...".format(str(count))
+	print("Creating master alignment...Parsing {} homologs...".format(str(count)))
 	for o in orthos:
 		count -= 1
 		present = []
@@ -170,17 +170,17 @@ def create_master_alignment(orthos,strains):
 			if s not in present:
 				align_data[s].append("-"*length)
 			if len("".join(align_data[s])) != total_leng:
-				print s, "is short!"
-				print total_leng, len("".join(align_data[s]))
-				print align_data[s]
-				print o
+				print(s, "is short!")
+				print(total_leng, len("".join(align_data[s])))
+				print(align_data[s])
+				print(o)
 				sys.exit()
 		if count % 100 == 0:
-			print "\t"+str(count), "remaining..."
+			print("\t"+str(count), "remaining...")
 		else:
 			pass
-	print "Done!"
-	print "Writing alignment..."
+	print("Done!")
+	print("Writing alignment...")
 	out = open(os.path.join(prefix,"master_alignment.faa"),'w')
 	for a in align_data:
 		out.write(">{}\n{}\n".format(a,"".join(align_data[a]).upper().replace(".","-")))
@@ -196,7 +196,7 @@ def get_strains():
 	return strains
 
 def index_hmms():
-	print "Indexing all_groups.hmm..."
+	print("Indexing all_groups.hmm...")
 	cmds = "hmmfetch --index {}".format(os.path.join(outdir,"all_groups.hmm"))
 	proc = subprocess.Popen(cmds.split())
 	proc.wait()

@@ -33,7 +33,7 @@ def check_strains(new_strains,genomedb):
 
 	for s in new_strains:
 		if s in old_strains:
-			print s, "is already in strainlist...check your strainlist."
+			print(s, "is already in strainlist...check your strainlist.")
 			sys.exit()
 
 	ns = open(os.path.join(outdir,"prop_strainlist.txt"),'a')
@@ -42,7 +42,7 @@ def check_strains(new_strains,genomedb):
 			i = open(os.path.join(genomedb,"pep",s+".pep.fa"),"r")
 		except IOError as exc:
 			if exc.errno == 2:
-				print s, 'not found in database...check your strainlist.'
+				print(s, 'not found in database...check your strainlist.')
 				sys.exit()
 		o = open(os.path.join(outdir,"prop_faa",s+".faa"),"w")
 		for seq in SeqIO.parse(i,'fasta'):
@@ -56,16 +56,16 @@ def check_strains(new_strains,genomedb):
 
 def make_diamond_databases(strains):
 	count = len(strains)
-	print "Making diamond databases for", count, "strains..."
+	print("Making diamond databases for", count, "strains...")
 	for s in strains:
 		cmds = "diamond makedb --in {}/prop_faa/{}.faa -d {}/prop_dmnd/{}.dmnd --quiet --threads {}".format(outdir,s,outdir,s,cpus)
 		proc = subprocess.Popen(cmds.split())
 		proc.wait()
 		count -= 1
 		if count == 0:
-			print "\tDone!"
+			print("\tDone!")
 		elif count % 10 == 0:
-			print "\t"+str(count), "remaining..."
+			print("\t"+str(count), "remaining...")
 		else:
 			pass
 	cmds = "diamond makedb --in {}/all_groups.faa -d {}/all_groups.dmnd --quiet --threads {}".format(outdir,outdir,cpus)
@@ -74,7 +74,7 @@ def make_diamond_databases(strains):
 	return
 
 def run_diamond(strains):
-	print "Running diamond on all", len(strains), "strains..."
+	print("Running diamond on all", len(strains), "strains...")
 	count = len(strains)
 	for s in strains:
 		cmds = "diamond blastp --query {}/prop_faa/{}.faa -d {}/prop_dmnd/{}.dmnd -o {}/prop_m8/{}.{}.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,s,outdir,s,outdir,s,s,cpus)
@@ -88,9 +88,9 @@ def run_diamond(strains):
 		proc.wait()
 		count -= 1
 		if count == 0:
-			print "\tDone!"
+			print("\tDone!")
 		elif (count % 10 == 0):
-			print "\t"+str(count), "remaining..."
+			print("\t"+str(count), "remaining...")
 		else:
 			pass
 	cmds = "diamond blastp --query {}/all_groups.faa -d {}/all_groups.dmnd -o {}/prop_m8/CONSENSUS.CONSENSUS.m8 -f tab --min-score 50 --quiet --threads {}".format(outdir,outdir,outdir,cpus)
@@ -99,7 +99,7 @@ def run_diamond(strains):
 	return
 
 def parse_diamond(genes):
-	print "Parsing diamond results..."
+	print("Parsing diamond results...")
 	files = os.listdir(os.path.join(outdir,"prop_m8"))
 	count = len(files)
 	for f in files:
@@ -118,15 +118,15 @@ def parse_diamond(genes):
 			o.write("\t".join(newvals)+"\n")
 		count -= 1
 		if count == 0:
-			print "\tDone!"
+			print("\tDone!")
 		elif count % 10 == 0:
-			print "\t"+str(count), "remaining..."
+			print("\t"+str(count), "remaining...")
 		else:
 			pass
 	return
 
 def get_genes(strains):
-	print "Getting gene lengths..."
+	print("Getting gene lengths...")
 	genes = {}
 	for s in strains:
 		genes[s] = {}
@@ -138,7 +138,7 @@ def get_genes(strains):
 	return genes
 
 def run_inparanoid(strains,pypath):
-	print "Running inparanoid on", len(strains), "strains..."
+	print("Running inparanoid on", len(strains), "strains...")
 	count = len(strains)
 	if use_MP:
 		pool = mp.Pool(processes=cpus)
