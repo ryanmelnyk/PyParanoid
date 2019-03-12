@@ -257,25 +257,39 @@ def add_Prokka_genome(outdir,prokka,species_id,taxid="2"):
 	return
 
 def add_img_genome(outdir,img,species_id,taxid="2"):
+	'''For adding genomes downloaded from the DOE/JGI Integrated Microbial
+	Genomes database (IMG). Assumes a *.tar.gz file has
+	been downloaded, extracted and unzipped resulting in a folder named with
+	the 10-digit IMG ID. The  This will copy the DNA fasta and amino-acid fasta
+	files to the genomedb directory specified with 'outdir'. Note that later
+	if you want to use the IMG genbank file you will have to download that
+	manually as gdb.download_genbank_files() will only check if the IMG genbank
+	file can be found, not download it.
+
+	The 'species_id' argument should be a string unique in the genomedb. Note
+	that currently you could add the same assembly to the genomedb using
+	multiple different species_id values - there is no built-in check like there
+	is for Ensembl or RefSeq data. NCBI taxonomy id can be specified using
+	'tax_id' argument otherwise it defaults to '2' for kingdom Bacteria ''''
 	if check_unique(species_id,outdir):
 		stats = {}
 		print("Copying files for", species_id)
-		for f in os.listdir(img):
+		for f in os.listdir(os.path.abspath(img)):
 			vals = f.split(".")
 			if f.endswith(".faa"):
 				stats['ngenes'] = 0
-				for seq in SeqIO.parse(open(os.path.join(img,f),'r'),'fasta'):
+				for seq in SeqIO.parse(open(os.path.join(os.path.abspath(img),f),'r'),'fasta'):
 					stats['ngenes'] += 1
-				shutil.copy(os.path.join(img,f),os.path.join(outdir,"pep","{}.pep.fa".format(species_id)))
+				shutil.copy(os.path.join(os.path.abspath(img),f),os.path.join(outdir,"pep","{}.pep.fa".format(species_id)))
 			elif vals[1] == "fna":
 				basecount = 0
 				contigcount = 0
-				for seq in SeqIO.parse(open(os.path.join(img,f),'r'),'fasta'):
+				for seq in SeqIO.parse(open(os.path.join(os.path.abspath(img),f),'r'),'fasta'):
 					basecount += len(str(seq.seq))
 					contigcount += 1
 				stats['basecount'] = basecount
 				stats['contigcount'] = contigcount
-				shutil.copy(os.path.join(img,f),os.path.join(outdir,"dna","{}.fna".format(species_id)))
+				shutil.copy(os.path.join(os.path.abspath(img),f),os.path.join(outdir,"dna","{}.fna".format(species_id)))
 			else:
 				pass
 		o = open(os.path.join(outdir,"genome_metadata.txt"),'a')

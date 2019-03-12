@@ -27,7 +27,7 @@ modes: multi_setup, parse, cluster, extract, build
 	parser.add_argument('--cpus',type=int,help='number of CPUs to use for tasks. Defaults to # of cores available.')
 	parser.add_argument('--mode',type=str,help='mode of PyParanoid to run')
 	parser.add_argument('--clean',action="store_true",help="clean up intermediate files")
-	parser.add_argument('--threshold',type=int,help="minimum size of groups")
+	parser.add_argument('--threshold',type=int,help="minimum size of groups, defaults to 2 which ignores singletons, set to 1 to include singleton")
 	parser.add_argument('--inflate', type=float,help="inflation parameter for mcl, default = 2")
 	parser.add_argument('--verbose',action="store_true",help="Print progress to STDOUT")
 	parser.add_argument('--multi',action="store_true",help="use only with mode setup and parse")
@@ -304,7 +304,7 @@ def parse_groups(seqdata, desc):
 	print("Writing fasta files and parsing descriptions...")
 	for line in open(os.path.join(outdir,"mcl","clusters.txt")):
 		vals = line.rstrip().split()
-		if len(vals) <= threshold:
+		if len(vals) < threshold:
 			continue
 		else:
 			o = open(os.path.join(outdir,"homolog_faa","group_{}.faa".format(str(group_count).zfill(5))),'w')
@@ -509,7 +509,7 @@ def main():
 	if args.threshold:
 		threshold = args.threshold
 	else:
-		threshold = 0
+		threshold = 2
 
 	global multi
 	if args.multi:
