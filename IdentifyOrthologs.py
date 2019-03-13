@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 #Ryan A. Melnyk
 #schmelnyk@gmail.com
-#UBC Microbiology - Haney Lab
 
 import os, argparse, subprocess, errno, sys, string
 import multiprocessing as mp
@@ -143,6 +142,7 @@ def create_master_alignment(orthos,strains):
 	count = len(orthos)
 	total_leng = 0 ###DEBUG
 	print("Creating master alignment...Parsing {} homologs...".format(str(count)))
+	translation = str.maketrans('','',string.ascii_lowercase+".")
 	for o in orthos:
 		count -= 1
 		present = []
@@ -159,11 +159,11 @@ def create_master_alignment(orthos,strains):
 				if len(vals) < 1:
 					continue
 				elif vals[0] in align_data:
-					align_data[vals[0]].append(vals[1].translate(None,string.ascii_lowercase).replace(".",""))
+					align_data[vals[0]].append(vals[1].translate(translation))
 					if vals[0] not in present:
 						present.append(vals[0])
 				else:
-					align_data[vals[0]] = [vals[1].translate(None,string.ascii_lowercase).replace(".","")]
+					align_data[vals[0]] = [vals[1].translate(translation)]
 					if vals[0] not in present:
 						present.append(vals[0])
 		for s in strains:
@@ -203,6 +203,7 @@ def index_hmms():
 	return
 
 def main():
+	print(sys.prefix)
 	args = parse_args()
 	global prefix
 	prefix = os.path.abspath(args.prefix)

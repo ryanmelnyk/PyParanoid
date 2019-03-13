@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 #Ryan A. Melnyk
 #schmelnyk@gmail.com
-#UBC Microbiology - Haney Lab
 
 import os
 import argparse
