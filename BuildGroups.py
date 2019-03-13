@@ -204,12 +204,24 @@ def hash_fastas():
 	for f in os.listdir(os.path.join(outdir,"faa")):
 		for seq in SeqIO.parse(open(os.path.join(outdir,"faa",f),'r'),'fasta'):
 			seqdata[str(seq.id)] = str(seq.seq)
-			match = re.search("(description:)(.*)",str(seq.description))
+			d = str(seq.description).replace("MULTISPECIES: ","")
+			match = re.search("(description:)(.*)",d)
 			if match == None:
-				desc[str(seq.id)] = str(seq.description).replace("MULTISPECIES: ","").split(" [")[0]
+				rex = "{} {}".format(str(seq.id),str(seq.id).split("|")[-1]).replace(".","\.").replace("|","\|")
+				match = re.search("({}? )(.*?)( \[.*)".format(rex),d)
+				if match == None:
+					match = re.search("({}? )(.*)".format(rex),d)
+					desc[str(seq.id)] = match.group(2)
+				else:
+					if re.search("(.*?)(_\d{3,})", match.group(2).split(" ")[0]):
+						# Indicates IMG formatting
+						desc[str(seq.id)] = " ".join(match.group(2).split(" ")[1:])
+					else:
+						# Indicates Prokka formatting
+						desc[str(seq.id)] = match.group(2)
 			else:
+				# Indicates Ensembl matching
 				desc[str(seq.id)] = match.group(2)
-
 			count += 1
 	return seqdata, desc, count
 
@@ -265,7 +277,7 @@ def mcxdump():
 	return
 
 def parse_clusters(strains, seq_number):
-	o = open(os.path.join(outdir,"mcl","clusterstats.out"),'w')
+	o = open(os.path.join(outdir,"clusterstats.out"),'w')
 	orthologs = 0
 	paralogs = 0
 	nghs = 0
