@@ -203,7 +203,6 @@ def index_hmms():
 	return
 
 def main():
-	print(sys.prefix)
 	args = parse_args()
 	global prefix
 	prefix = os.path.abspath(args.prefix)

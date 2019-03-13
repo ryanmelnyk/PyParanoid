@@ -1,7 +1,7 @@
 # PyParanoid
 
 **Ryan Melnyk**   
-**v0.2.2**
+**v0.4**
 
 ***ramelnyk@ucdavis.edu***  
 ***schmelnyk@gmail.com***
@@ -18,9 +18,11 @@ I have also included some methods that facilitate upstream genome database manag
 
 PyParanoid is primarily written in python.  To manage python installations and environments, I highly recommend using [Miniconda](https://conda.io/miniconda.html).
 
+**UPDATE March 2019** I finally got with the program and updated to Python 3 - PyParanoid v0.4 is tested using Python 3.7.1
+
 PyParanoid also depends on a modified version of the InParanoid script ([Sonnhammer et al., 2015](http://inparanoid.sbc.su.se/cgi-bin/faq.cgi)) and thus also requires perl to be installed. Pretty much any version should work.
 
-PyParanoid can be installed using pip simply by running
+The current version of PyParanoid can be installed using pip simply by running
 
 ```bash
 pip install pyparanoid
@@ -40,6 +42,12 @@ brew install mcl
 brew install cd-hit
 brew install muscle
 ```
+Versions tested for compatibility with PyParanoid v0.4
+CD-HIT versions 4.7 & 4.8.1
+HMMER 3.1b2
+MUSCLE v3.8.1551 & v3.8.31
+diamond v0.8.18.80 & v0.8.25.87
+mcl 14-137
 
 Make sure that these are all located in your PATH (and that all of the executables work!)
 
