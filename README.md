@@ -43,11 +43,11 @@ brew install cd-hit
 brew install muscle
 ```
 Versions tested for compatibility with PyParanoid v0.4
-CD-HIT versions 4.7 & 4.8.1
-HMMER 3.1b2
-MUSCLE v3.8.1551 & v3.8.31
-diamond v0.8.18.80 & v0.8.25.87
-mcl 14-137
++ CD-HIT versions 4.7 & 4.8.1
++ HMMER 3.1b2
++ MUSCLE v3.8.1551 & v3.8.31
++ diamond v0.8.18.80 & v0.8.25.87
++ mcl 14-137
 
 Make sure that these are all located in your PATH (and that all of the executables work!)
 

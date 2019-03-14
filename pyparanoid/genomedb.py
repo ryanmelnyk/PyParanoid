@@ -270,7 +270,7 @@ def add_img_genome(outdir,img,species_id,taxid="2"):
 	that currently you could add the same assembly to the genomedb using
 	multiple different species_id values - there is no built-in check like there
 	is for Ensembl or RefSeq data. NCBI taxonomy id can be specified using
-	'tax_id' argument otherwise it defaults to '2' for kingdom Bacteria ''''
+	'tax_id' argument otherwise it defaults to '2' for kingdom Bacteria '''
 	if check_unique(species_id,outdir):
 		stats = {}
 		print("Copying files for", species_id)
