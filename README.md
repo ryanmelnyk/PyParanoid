@@ -126,3 +126,5 @@ PS - If you are interested in applying comparative genomics to a biological ques
 ## Citing PyParanoid
 
 A [manuscript describing PyParanoid](https://www.biorxiv.org/content/early/2018/06/12/345488) is available on bioRxiv where I used it to study the evolution of pathogenesis and commensalism in plant-associated *Pseudomonas* spp.
+
+**UPDATE March 2019** The paper is out! Check it out on the [ISME Journal](https://www.nature.com/articles/s41396-019-0372-5) website.
