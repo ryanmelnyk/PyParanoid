@@ -294,7 +294,7 @@ def _make_tracks(seq, span, coords, g, GD, count, locus_tags, labels):
 	for feat in seq.features:
 		if feat.type == "CDS":
 			if int(feat.location.start) > (coords[0]-(span/2)) and int(feat.location.end) < (coords[1]+(span/2)):
-				newloc = FeatureLocation(feat.location.start-(coords[0]-(span/2)),feat.location.end-(coords[0]-(span/2)),strand=feat.strand)
+				newloc = FeatureLocation(int(feat.location.start-(coords[0]-(span/2))),int(feat.location.end-(coords[0]-(span/2))),strand=feat.strand)
 				feat.location = newloc
 				if g[2] == "prokka_in_house" or g[2] == "NCBI":
 					feature_set.add_feature(feat, sigil="BIGARROW", arrowshaft_height=1, arrowhead_length=.4,color="#D3D3D3", \
