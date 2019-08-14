@@ -210,7 +210,10 @@ def hash_fastas():
 				match = re.search("({}? )(.*?)( \[.*)".format(rex),d)
 				if match == None:
 					match = re.search("({}? )(.*)".format(rex),d)
-					desc[str(seq.id)] = match.group(2)
+					if match == None:
+						desc[str(seq.id)] = 'no_desc'
+					else:
+						desc[str(seq.id)] = match.group(2)
 				else:
 					if re.search("(.*?)(_\d{3,})", match.group(2).split(" ")[0]):
 						# Indicates IMG formatting
