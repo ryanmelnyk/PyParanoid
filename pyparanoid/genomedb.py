@@ -84,7 +84,9 @@ def download_Ensembl_files(outdir, names=False, maxgen=10, taxids=False, complet
 				thisline.append(js['assembly'][feat])
 			for feat in ['display_name', 'strain']:
 				thisline.append(js['organism'][feat])
-			thisline.append(js["core"]["dbname"])
+			for db_dict in js["databases"]:
+				if db_dict["type"] == "core":
+					thisline.append(db_dict["dbname"])
 			for feat in ['name', 'taxonomy_id']:
 				thisline.append(js['organism'][feat])
 			thisline.append(str(len(js["assembly"]["sequences"])))
